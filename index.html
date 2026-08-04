@@ -287,9 +287,9 @@ function buildChartSVG(combined, colorMap) {
   const plotW = W - padL - padR, plotH = H - padT - padB;
 
   // ---- Y-AXIS SCALE ----
-  const MAX_HEADROOM = 5;         // space added ABOVE the highest data point, in percentage points
-  const MIN_HEADROOM = 5;         // space added BELOW the lowest data point, in percentage points
-  const AXIS_ROUND_TO = 5;        // snap the resulting min/max to the nearest multiple of this, for clean labels
+  const MAX_HEADROOM = 1;         // space added ABOVE the highest data point, in percentage points
+  const MIN_HEADROOM = 1;         // space added BELOW the lowest data point, in percentage points
+  const AXIS_ROUND_TO = 1;        // snap the resulting min/max to the nearest multiple of this, for clean labels
   const FORCE_ZERO_FLOOR = false; // true = axis always starts at 0, ignoring MIN_HEADROOM
 
   const allVals = combined.flatMap(b => [b.t5, b.t3, b.tc]).filter(v => !isNaN(v));
