@@ -311,9 +311,9 @@ function buildChartSVG(combined, colorMap) {
   order.forEach(b => {
     const pts = [b.t5, b.t3, b.tc].map((v, i) => `${xFor(i)},${yFor(isNaN(v) ? minVal : v)}`).join(' ');
     const color = colorMap[b.id];
-    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
     [b.t5, b.t3, b.tc].forEach((v, i) => {
-      svg += `<circle cx="${xFor(i)}" cy="${yFor(isNaN(v) ? minVal : v)}" r="5" fill="${color}"/>`;
+      svg += `<circle cx="${xFor(i)}" cy="${yFor(isNaN(v) ? minVal : v)}" r="8" fill="${color}"/>`;
     });
   });
 
