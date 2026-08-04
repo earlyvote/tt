@@ -291,6 +291,13 @@ function buildChartSVG(combined, colorMap) {
   maxVal = Math.ceil(maxVal / 5) * 5;
   const gridSteps = 4;
 
+  const MIN_MODE = 'dynamic'; // 'dynamic' | 'zero'
+  let minVal = 0;
+  if (MIN_MODE === 'dynamic') {
+    minVal = Math.max(0, Math.floor(Math.min(...allVals) / 5) * 5);
+    if (minVal >= maxVal) minVal = 0; // safety fallback if all values round to the same bucket
+  }
+
   const xFor = i => padL + (plotW * i) / 2; // 3 categories: 0,1,2
   const yFor = v => padT + plotH - (plotH * v) / maxVal;
 
