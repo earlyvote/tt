@@ -8,7 +8,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --green:#2f7d3c;
+    --selected-block:#2f7d3c;
+    --rank-1:#8c2020;
+    --rank-2:#3a6fe0;
+    --rank-3:#b25cc9;
+    --rank-4:#e0a35c;
     --green-dark:#255f30;
     --cream:#fdf6ec;
     --ink:#26262a;
@@ -41,7 +45,7 @@
   .pad{ padding:22px 22px 4px 22px; }
 
   .pill{
-    background:var(--green);
+    background:var(--selected-block);
     color:#fff;
     font-family:'Poppins',sans-serif;
     font-weight:700;
@@ -69,7 +73,7 @@
     margin-bottom:14px;
   }
   .badge{
-    background:var(--green);
+    background:var(--selected-block);
     color:#fff;
     font-weight:700;
     font-size:13px;
@@ -119,7 +123,7 @@
     font-size:15px;
   }
   .rankrow.subject{
-    background:var(--green);
+    background:var(--selected-block);
     color:#fff;
     font-weight:700;
   }
@@ -162,7 +166,7 @@
     width:28px; height:28px;
     border-radius:50%;
     border:3px solid #e6e0d2;
-    border-top-color:var(--green);
+    border-top-color:var(--selected-block);
     margin:0 auto 16px auto;
     animation:spin .8s linear infinite;
   }
@@ -208,8 +212,10 @@ const CONFIG = {
   }
 };
 
-const PALETTE = ["#8c2020", "#3a6fe0", "#b25cc9", "#e0a35c"]; // assigned to the 4 non-subject blocks, in rank order
-const SUBJECT_COLOR = "#2f7d3c";
+const COLOR_CONFIG = {
+  subject: '#2f7d3c',
+  ranks: ['#8c2020', '#3a6fe0', '#b25cc9', '#e0a35c']
+};
 
 /* ============================================================
    CSV parsing
@@ -472,7 +478,7 @@ async function main() {
   const colorMap = {};
   let pi = 0;
   ranked.forEach(b => {
-    colorMap[b.id] = b.isSubject ? SUBJECT_COLOR : PALETTE[pi++];
+    colorMap[b.id] = b.isSubject ? COLOR_CONFIG.subject : COLOR_CONFIG.ranks[pi++];
   });
 
   const subjectRank = ranked.findIndex(b => b.id === subject.id) + 1;
