@@ -288,7 +288,7 @@ function buildChartSVG(combined, colorMap) {
 
   const allVals = combined.flatMap(b => [b.t5, b.t3, b.tc]).filter(v => !isNaN(v));
   let maxVal = Math.max(10, ...allVals);
-  maxVal = Math.ceil(maxVal / 10) * 10;
+  maxVal = Math.ceil(maxVal / 5) * 5;
   const gridSteps = 4;
 
   const xFor = i => padL + (plotW * i) / 2; // 3 categories: 0,1,2
