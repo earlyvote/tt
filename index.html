@@ -62,23 +62,8 @@
   }
   .summary b{ font-weight:700; }
 
-  .row-between{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:14px;
-  }
-  .badge{
-    background:var(--selected-block);
-    color:#fff;
-    font-weight:700;
-    font-size:13px;
-    letter-spacing:.02em;
-    padding:9px 16px;
-    border-radius:999px;
-    white-space:nowrap;
-  }
+  
+  
  
 
   .chart-wrap{
@@ -347,9 +332,7 @@ function render(subject, ranked, colorMap, subjectRank, total) {
         <b>${fmtPct(subject.tc)}</b> of your block has voted early. You are in
         <b>${ordinal(subjectRank)}</b> place out of ${total} closest neighboring blocks
       </div>
-      <div class="row-between">
-        <div class="badge">${fmtPct(subject.tc)} - ${ordinal(subjectRank).toUpperCase()} PLACE</div>
-      </div>
+      
       <div class="chart-wrap">${chartSVG}</div>
       <div class="ranklist open" id="rankList">${rankRows}</div>
     </div>
