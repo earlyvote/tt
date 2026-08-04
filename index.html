@@ -364,10 +364,10 @@ function render(subject, ranked, colorMap, subjectRank, total) {
       </div>
       <div class="row-between">
         <div class="badge">${fmtPct(subject.tc)} - ${ordinal(subjectRank).toUpperCase()} PLACE</div>
-        <button class="ranking-toggle" id="rankToggle" type="button">
-          neighborhood ranking
-          <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="#54545c" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
+        // <button class="ranking-toggle" id="rankToggle" type="button">
+        //   neighborhood ranking
+        //   <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="#54545c" stroke-width="2" stroke-linecap="round"/></svg>
+        // </button>
       </div>
       <div class="chart-wrap">${chartSVG}</div>
       <div class="ranklist open" id="rankList">${rankRows}</div>
