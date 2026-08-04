@@ -311,9 +311,12 @@ function buildChartSVG(combined, colorMap) {
   order.forEach(b => {
     const pts = [b.t5, b.t3, b.tc].map((v, i) => `${xFor(i)},${yFor(isNaN(v) ? minVal : v)}`).join(' ');
     const color = colorMap[b.id];
-    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const dotRadius = b.isSubject ? 10 : 5;
+    const strokeWidth = b.isSubject ? 5 : 3;
+
+    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`;
     [b.t5, b.t3, b.tc].forEach((v, i) => {
-      svg += `<circle cx="${xFor(i)}" cy="${yFor(isNaN(v) ? minVal : v)}" r="8" fill="${color}"/>`;
+      svg += `<circle cx="${xFor(i)}" cy="${yFor(isNaN(v) ? minVal : v)}" r="${dotRadius}" fill="${color}"/>`;
     });
   });
 
@@ -339,7 +342,7 @@ function render(subject, ranked, colorMap, subjectRank, total) {
     <div class="pad">
       <div class="pill">${escapeHtml(subject.name)}</div>
       <div class="summary">
-        <b>${fmtPct(subject.tc)}</b> of your block has voted early. You are in
+        <b>${fmtPct(subject.tc)}</b> of your block has voted. You are in
         <b>${ordinal(subjectRank)}</b> place out of ${total} closest neighboring blocks
       </div>
       
