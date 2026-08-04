@@ -311,7 +311,7 @@ function buildChartSVG(combined, colorMap) {
   order.forEach(b => {
     const pts = [b.t5, b.t3, b.tc].map((v, i) => `${xFor(i)},${yFor(isNaN(v) ? minVal : v)}`).join(' ');
     const color = colorMap[b.id];
-    const dotRadius = b.isSubject ? 10 : 5;
+    const dotRadius = b.isSubject ? 7 : 5;
     const strokeWidth = b.isSubject ? 5 : 3;
 
     svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`;
