@@ -79,22 +79,7 @@
     border-radius:999px;
     white-space:nowrap;
   }
-  .ranking-toggle{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:14px;
-    color:var(--ink-soft);
-    background:#f4efe4;
-    padding:9px 14px;
-    border-radius:999px;
-    cursor:pointer;
-    user-select:none;
-    border:none;
-    font-family:inherit;
-  }
-  .ranking-toggle svg{ transition:transform .2s ease; }
-  .ranking-toggle.open svg{ transform:rotate(180deg); }
+ 
 
   .chart-wrap{
     background:var(--cream);
@@ -364,10 +349,6 @@ function render(subject, ranked, colorMap, subjectRank, total) {
       </div>
       <div class="row-between">
         <div class="badge">${fmtPct(subject.tc)} - ${ordinal(subjectRank).toUpperCase()} PLACE</div>
-        // <button class="ranking-toggle" id="rankToggle" type="button">
-        //   neighborhood ranking
-        //   <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="#54545c" stroke-width="2" stroke-linecap="round"/></svg>
-        // </button>
       </div>
       <div class="chart-wrap">${chartSVG}</div>
       <div class="ranklist open" id="rankList">${rankRows}</div>
@@ -375,13 +356,7 @@ function render(subject, ranked, colorMap, subjectRank, total) {
     <div class="banner">${escapeHtml(CONFIG.bannerText)}</div>
   `;
 
-  const toggle = document.getElementById('rankToggle');
-  const list = document.getElementById('rankList');
-  toggle.classList.add('open');
-  toggle.addEventListener('click', () => {
-    toggle.classList.toggle('open');
-    list.classList.toggle('open');
-  });
+  
 }
 
 function escapeHtml(s) {
