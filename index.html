@@ -8,13 +8,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* Default shown only until the script runs and overrides this from COLOR_CONFIG.subject below. */
-    --selected-block:#b87421;
-    --test-color: #b87421;
-    --test-color1: #167f6e;
-    --test-color2: #2142b8;
-    --test-color3: #6021b8;
-    --test-color4: #971487;
+    /* Palette — edit these five variables to change colors */
+    --selected-block: hwb(132 0% 50%); /* selected block (subject) */
+    --other-block1:  hsl(49, 100%, 35%); /* rank 1 */
+    --other-block2:  #0069d1; /* rank 2 */
+    --other-block3:  hsl(280, 100%, 34%); /* rank 3 */
+    --other-block4:  #f723c2; /* rank 4 */
+
     --cream:#fdf6ec;
     --ink:#26262a;
     --ink-soft:#54545c;
@@ -179,9 +179,19 @@ const CONFIG = {
   }
 };
 
+function _cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+  return (v ? v.trim() : fallback);
+}
+
 const COLOR_CONFIG = {
-  subject: '#167f6e',
-  ranks: ['#b87421', '#2142b8', '#971487', '#6021b8', ]
+  subject: _cssVar('--selected-block', '#b87421'),
+  ranks: [
+    _cssVar('--other-block1', '#167f6e'),
+    _cssVar('--other-block2', '#2142b8'),
+    _cssVar('--other-block3', '#971487'),
+    _cssVar('--other-block4', '#e0a35c')
+  ]
 };
 
 /* ============================================================
