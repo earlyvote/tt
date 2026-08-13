@@ -175,12 +175,7 @@ const CONFIG = {
     latlng:    ["Block Latitude & Longitude", "Block Lat/Long", "Lat/Long"], // fallback combined column
     t5:        ["Block Turnout - 5 days ago", "Block Turnout 5 days ago", "Turnout 5 days ago"],
     t3:        ["Block Turnout - 3 days ago", "Block Turnout 3 days ago", "Turnout 3 days ago"],
-    tc:        ["Block Turnout - Current", "Block Turnout Current", "Current Turnout"],
-    // pre-calculated nearest-neighbor Block IDs, one column per rank
-    closest1:  ["Closest Block ID 1", "Closest Block ID1", "Nearest Block ID 1"],
-    closest2:  ["Closest Block ID 2", "Closest Block ID2", "Nearest Block ID 2"],
-    closest3:  ["Closest Block ID 3", "Closest Block ID3", "Nearest Block ID 3"],
-    closest4:  ["Closest Block ID 4", "Closest Block ID4", "Nearest Block ID 4"]
+    tc:        ["Block Turnout - Current", "Block Turnout Current", "Current Turnout"]
   }
 };
 
@@ -246,6 +241,13 @@ function findColumn(headers, candidates) {
 function parsePercent(v) {
   if (v === null || v === undefined || v === '') return NaN;
   return parseFloat(String(v).replace('%', '').trim());
+}
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 function ordinal(n) {
   const s = ["th","st","nd","rd"], v = n % 100;
@@ -393,8 +395,7 @@ async function main() {
   for (const key in CONFIG.columns) {
     col[key] = findColumn(headers, CONFIG.columns[key]);
   }
-  if (!col.blockId || !col.blockName || !col.t5 || !col.t3 || !col.tc ||
-      !col.closest1 || !col.closest2 || !col.closest3 || !col.closest4) {
+  if (!col.blockId || !col.blockName || !col.t5 || !col.t3 || !col.tc || !(col.lat && col.lng || col.latlng)) {
     showState(`Couldn't find the expected columns in the spreadsheet.<br><br>
       Check <code>CONFIG.columns</code> against your sheet's actual headers.`);
     return;
@@ -419,9 +420,6 @@ async function main() {
       t5: parsePercent(r[col.t5]),
       t3: parsePercent(r[col.t3]),
       tc: parsePercent(r[col.tc]),
-      closestIds: [col.closest1, col.closest2, col.closest3, col.closest4]
-        .map(c => (r[c] || '').trim())
-        .filter(Boolean),
     });
   });
 
@@ -431,16 +429,15 @@ async function main() {
       Check that this ID exists in the Block ID column.`);
     return;
   }
-  const nearest = subject.closestIds
-    .map(id => blocks.get(id))
-    .filter(Boolean);
-
-  if (!nearest.length) {
-    showState(`No closest-block data found for <code>${escapeHtml(queriedId)}</code>.<br><br>
-      Check that the Closest Block ID columns are filled in for this block, and that those IDs
-      match values in the Block ID column.`);
+  if (isNaN(subject.lat) || isNaN(subject.lng)) {
+    showState(`This block is missing latitude/longitude data, so nearby blocks can't be found.`);
     return;
   }
+
+  const others = [...blocks.values()].filter(b => b.id !== subject.id && !isNaN(b.lat) && !isNaN(b.lng));
+  others.forEach(b => { b.dist = haversineMiles(subject.lat, subject.lng, b.lat, b.lng); });
+  others.sort((a, b) => a.dist - b.dist);
+  const nearest = others.slice(0, 4);
 
   subject.isSubject = true;
   const combined = [subject, ...nearest];
