@@ -190,7 +190,7 @@ const CONFIG = {
   urlParam: "block",
 
   // Static footer message (not tied to spreadsheet data)
-  bannerText: "Get your neighbors to vote early!",
+  bannerText: "Vote early - send this to the neighbors on your block!",
 
   // Column header candidates — first match wins, case/spacing-insensitive.
   // Add alternate spellings here if your sheet's headers differ.
@@ -371,9 +371,8 @@ function render(subject, ranked, colorMap, subjectRank, total) {
       <div class="pill">${escapeHtml(subject.name)}</div>
       <div class="summary">
         <b>${fmtPct(subject.tc)}</b> of your block has voted. You are in
-        <b>${ordinal(subjectRank)}</b> place out of ${total} closest neighboring blocks. 
-        <p>Share this with your block - and outvote your neighboring blocks!
-      </div>
+        <b>${ordinal(subjectRank)} place </b> out of ${total} nearby blocks. 
+      </div>    
       
       <div class="chart-wrap">${chartSVG}</div>
       <div class="ranklist open" id="rankList">${rankRows}</div>
