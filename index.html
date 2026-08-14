@@ -55,14 +55,41 @@
   }
   .summary{
     text-align:center;
-    font-size:15px;
+    font-size:16px;
     line-height:1.5;
     color:var(--ink);
     margin-bottom:16px;
   }
   .summary b{ font-weight:700; }
 
-  
+  .ev-block{
+  padding:22px 26px 28px 26px;
+  text-align:center;
+}
+.ev-kicker{
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--ink-soft);
+  font-weight:600;
+  margin-bottom:8px;
+}
+.ev-name, .ev-address{
+  font-weight:700;
+  font-size:17px;
+  text-decoration:underline;
+}
+.ev-address{ margin-bottom:12px; }
+.ev-hours-label{
+  font-weight:600;
+  font-size:14px;
+  color:var(--ink-soft);
+  margin-bottom:4px;
+}
+.ev-hours{
+  font-size:15px;
+  line-height:1.5;
+}
   
  
 
@@ -168,6 +195,9 @@ const CONFIG = {
   // Column header candidates — first match wins, case/spacing-insensitive.
   // Add alternate spellings here if your sheet's headers differ.
   columns: {
+    evTitle:   ["Closest Early Voting Location Title", "EV Location Title"],
+    evAddress: ["Closest Early Voting Location Address", "EV Location Address"],
+    evHours:   ["Closest Early Voting Location Hours", "EV Location Hours"],
     blockId:   ["Block ID", "BlockID"],
     blockName: ["Block Name", "BlockName"],
     lat:       ["Block Latitude", "Latitude", "Lat"],
@@ -348,6 +378,15 @@ function render(subject, ranked, colorMap, subjectRank, total) {
       <div class="ranklist open" id="rankList">${rankRows}</div>
     </div>
     <div class="banner">${escapeHtml(CONFIG.bannerText)}</div>
+    ${subject.evTitle ? `
+    <div class="ev-block">
+      <div class="ev-kicker">Your closest early voting location</div>
+      <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
+      <div class="ev-address">${escapeHtml(subject.evAddress)}</div>
+      <div class="ev-hours-label">Hours</div>
+      <div class="ev-hours">${escapeHtml(subject.evHours).replace(/\n/g, '<br>')}</div>
+    </div>
+  ` : ''}
   `;
 
   
@@ -419,6 +458,9 @@ async function main() {
       t5: parsePercent(r[col.t5]),
       t3: parsePercent(r[col.t3]),
       tc: parsePercent(r[col.tc]),
+        evTitle:   col.evTitle   ? r[col.evTitle]   : '',
+        evAddress: col.evAddress ? r[col.evAddress] : '',
+        evHours:   col.evHours   ? r[col.evHours]   : '',
       closestIds: [col.closest1, col.closest2, col.closest3, col.closest4]
         .map(c => (r[c] || '').trim())
         .filter(Boolean),
