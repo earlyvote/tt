@@ -4,502 +4,765 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Block Turnout Tracker</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-  :root{
+  :root {
     /* Palette — edit these five variables to change colors */
-    --selected-block: hwb(132 0% 50%); /* selected block (subject) */
-    --other-block1:  hsl(49, 100%, 35%); /* rank 1 */
-    --other-block2:  #0069d1; /* rank 2 */
-    --other-block3:  hwb(273 0% 32%); /* rank 3 */
-    --other-block4:  rgb(142, 24, 112); /* rank 4 */
+    --selected-block: hwb(132 0% 50%);
+    --other-block1: hsl(49, 100%, 35%);
+    --other-block2: #0069d1;
+    --other-block3: hwb(273 0% 32%);
+    --other-block4: rgb(142, 24, 112);
 
-    --cream:#fdf6ec;
-    --ink:#26262a;
-    --ink-soft:#54545c;
-    --line:#e7e0d3;
-    --banner:#4a4a4a;
+    --cream: #fdf6ec;
+    --ink: #26262a;
+    --ink-soft: #54545c;
+    --line: #e7e0d3;
+    --banner: #4a4a4a;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:#fbf8f3;
-    font-family:'Inter',system-ui,sans-serif;
-    color:var(--ink);
-    display:flex;
-    justify-content:center;
-    padding:32px 14px;
-  }
-  .card{
-    width:100%;
-    max-width:440px;
-    background:#ffffff;
-    border-radius:22px;
-    overflow:hidden;
-    box-shadow:0 10px 30px rgba(0,0,0,0.12);
-  }
-  .pad{ padding:22px 22px 4px 22px; }
 
-  .pill{
-    background:var(--selected-block);
-    color:#fff;
-    font-family:'Poppins',sans-serif;
-    font-weight:700;
-    font-size:26px;
-    line-height:1.15;
-    padding:16px 20px;
-    border-radius:999px;
-    text-align:center;
-    margin-bottom:16px;
+  * {
+    box-sizing: border-box;
   }
-  .summary{
-    text-align:center;
-    font-size:16px;
-    line-height:1.5;
-    color:var(--ink);
-    margin-bottom:16px;
-  }
-  .summary b{ font-weight:700; }
 
-  .ev-block{
-  padding:22px 26px 28px 26px;
-  text-align:center;
+  body {
+    margin: 0;
+    background: #fbf8f3;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 32px 14px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  .pad {
+    padding: 22px 22px 4px;
+  }
+
+  .pill {
+    background: var(--selected-block);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.15;
+    padding: 16px 20px;
+    border-radius: 999px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .summary {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .summary b {
+    font-weight: 700;
+  }
+
+  /* Early-voting details */
+  .ev-block {
+    padding: 10px 20px 10px;
+  }
+
+  .ev-details {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .ev-location {
+    flex: 2;
+    min-width: 0;
+  }
+
+  .ev-hours-section {
+    flex: 3;
+    min-width: 0;
+  }
+
+  .ev-location {
+    text-align: left;
+  }
+
+  .ev-hours-section {
+    text-align: right;
+  }
+
+  .ev-name,
+  .ev-address {
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: underline;
+  }
+
+  .ev-address {
+    margin-bottom: 0;
+  }
+
+  .ev-hours-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 0px;
+  }
+
+  .ev-hours {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .ev-location {
+  text-align: left;
+  color: var(--ink);
+  text-decoration: none;
+  display: block;
+  border-radius: 8px;
+  padding: 4px;
+  margin: -4px;
+  transition: background-color 0.15s ease;
 }
-.ev-kicker{
-  font-size:13px;
-  text-transform:uppercase;
-  letter-spacing:.04em;
-  color:var(--ink-soft);
-  font-weight:600;
-  margin-bottom:8px;
-}
-.ev-name, .ev-address{
-  font-weight:700;
-  font-size:17px;
-  text-decoration:underline;
-}
-.ev-address{ margin-bottom:12px; }
-.ev-hours-label{
-  font-weight:600;
-  font-size:14px;
-  color:var(--ink-soft);
-  margin-bottom:4px;
-}
-.ev-hours{
-  font-size:15px;
-  line-height:1.5;
-}
-  
- 
 
-  .chart-wrap{
-    background:var(--cream);
-    border-radius:16px;
-    padding:16px 10px 6px 10px;
-    margin-bottom:16px;
-  }
-  .chart-wrap svg{ display:block; width:100%; height:auto; }
+.ev-location:hover {
+  background: var(--cream);
+}
 
-  .ranklist{
-    padding:0 0 14px 0;
-    max-height:0;
-    overflow:hidden;
-    transition:max-height .25s ease;
-  }
-  .ranklist.open{ max-height:400px; }
-  .rankrow{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:9px 6px;
-    border-radius:10px;
-    font-size:15px;
-  }
-  .rankrow.subject{
-    background:var(--selected-block);
-    color:#fff;
-    font-weight:700;
-  }
-  .rankrow .num{
-    width:16px;
-    font-weight:700;
-  }
-  .rankrow .bname{
-    flex:1;
-    font-weight:600;
-  }
-  .rankrow .pct{
-    font-weight:700;
+.ev-location:focus-visible {
+  outline: 3px solid var(--selected-block);
+  outline-offset: 3px;
+}
+
+  @media (max-width: 380px) {
+    .ev-details {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .ev-location,
+    .ev-hours-section {
+      width: 100%;
+      text-align: center;
+    }
   }
 
-  .banner{
-    background:var(--banner);
-    color:#fff;
-    text-align:center;
-    font-size:17px;
-    line-height:1.5;
-    padding:24px 26px;
-    font-weight:500;
+  .chart-wrap {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 16px 10px 6px;
+    margin-bottom: 16px;
   }
 
-  .state{
-    padding:60px 26px;
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:15px;
-    line-height:1.6;
+  .chart-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
   }
-  .state code{
-    background:#f2ede0;
-    padding:2px 6px;
-    border-radius:5px;
-    font-size:13px;
+
+  .ranklist {
+    padding: 0 0 14px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
   }
-  .spinner{
-    width:28px; height:28px;
-    border-radius:50%;
-    border:3px solid #e6e0d2;
-    border-top-color:var(--selected-block);
-    margin:0 auto 16px auto;
-    animation:spin .8s linear infinite;
+
+  .ranklist.open {
+    max-height: 400px;
   }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .rankrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 6px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+
+  .rankrow.subject {
+    background: var(--selected-block);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .rankrow .num {
+    width: 16px;
+    font-weight: 700;
+  }
+
+  .rankrow .bname {
+    flex: 1;
+    font-weight: 600;
+  }
+
+  .rankrow .pct {
+    font-weight: 700;
+  }
+
+  .banner {
+    background: var(--banner);
+    color: #fff;
+    text-align: center;
+    font-size: 17px;
+    line-height: 1.5;
+    padding: 20px 20px;
+    font-weight: 500;
+  }
+
+  .state {
+    padding: 60px 26px;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .state code {
+    background: #f2ede0;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid #e6e0d2;
+    border-top-color: var(--selected-block);
+    margin: 0 auto 16px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 </style>
 </head>
-<body>
 
-<div class="card" id="card">
-  <div class="state" id="state">
-    <div class="spinner"></div>
-    Loading block data&hellip;
+<body>
+  <div class="card" id="card">
+    <div class="state" id="state">
+      <div class="spinner"></div>
+      Loading block data&hellip;
+    </div>
   </div>
-</div>
 
 <script>
 /* ============================================================
    CONFIG — edit these two things for your sheet
-   testing
    ============================================================ */
 const CONFIG = {
-  // Google Sheets: File > Share > Publish to web > select the sheet > CSV
   csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9oI8bhCHF8bLPdRsk8z3boucRuvoj72ABxxaSLExldGszEE1Pe6uoIE7LwByWPZiLNCuhXsZpcFGs/pub?gid=0&single=true&output=csv",
 
-  // URL query param that selects which block to show, e.g.
-  // yoursite.com/?block=B1
   urlParam: "block",
 
-  // Static footer message (not tied to spreadsheet data)
   bannerText: "Get your nextdoor neighbors to vote at your closest early voting location",
 
-  // Column header candidates — first match wins, case/spacing-insensitive.
-  // Add alternate spellings here if your sheet's headers differ.
   columns: {
-    evTitle:   ["Closest Early Voting Location Title", "EV Location Title"],
+    evTitle: ["Closest Early Voting Location Title", "EV Location Title"],
     evAddress: ["Closest Early Voting Location Address", "EV Location Address"],
-    evHours:   ["Closest Early Voting Location Hours", "EV Location Hours"],
-    blockId:   ["Block ID", "BlockID"],
+    evHours: ["Closest Early Voting Location Hours", "EV Location Hours"],
+    blockId: ["Block ID", "BlockID"],
     blockName: ["Block Name", "BlockName"],
-    lat:       ["Block Latitude", "Latitude", "Lat"],
-    lng:       ["Block Longitude", "Longitude", "Lng", "Long"],
-    latlng:    ["Block Latitude & Longitude", "Block Lat/Long", "Lat/Long"], // fallback combined column
-    t5:        ["Block Turnout - 5 days ago", "Block Turnout 5 days ago", "Turnout 5 days ago"],
-    t3:        ["Block Turnout - 3 days ago", "Block Turnout 3 days ago", "Turnout 3 days ago"],
-    tc:        ["Block Turnout - Current", "Block Turnout Current", "Current Turnout"],
-    // pre-calculated nearest-neighbor Block IDs, one column per rank
-    closest1:  ["Closest Block ID 1", "Closest Block ID1", "Nearest Block ID 1"],
-    closest2:  ["Closest Block ID 2", "Closest Block ID2", "Nearest Block ID 2"],
-    closest3:  ["Closest Block ID 3", "Closest Block ID3", "Nearest Block ID 3"],
-    closest4:  ["Closest Block ID 4", "Closest Block ID4", "Nearest Block ID 4"]
+    lat: ["Block Latitude", "Latitude", "Lat"],
+    lng: ["Block Longitude", "Longitude", "Lng", "Long"],
+    latlng: ["Block Latitude & Longitude", "Block Lat/Long", "Lat/Long"],
+    t5: ["Block Turnout - 5 days ago", "Block Turnout 5 days ago", "Turnout 5 days ago"],
+    t3: ["Block Turnout - 3 days ago", "Block Turnout 3 days ago", "Turnout 3 days ago"],
+    tc: ["Block Turnout - Current", "Block Turnout Current", "Current Turnout"],
+    closest1: ["Closest Block ID 1", "Closest Block ID1", "Nearest Block ID 1"],
+    closest2: ["Closest Block ID 2", "Closest Block ID2", "Nearest Block ID 2"],
+    closest3: ["Closest Block ID 3", "Closest Block ID3", "Nearest Block ID 3"],
+    closest4: ["Closest Block ID 4", "Closest Block ID4", "Nearest Block ID 4"]
   }
 };
 
 function _cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name);
-  return (v ? v.trim() : fallback);
+  return v ? v.trim() : fallback;
 }
 
 const COLOR_CONFIG = {
-  subject: _cssVar('--selected-block', '#b87421'),
+  subject: _cssVar("--selected-block", "#b87421"),
   ranks: [
-    _cssVar('--other-block1', '#167f6e'),
-    _cssVar('--other-block2', '#2142b8'),
-    _cssVar('--other-block3', '#971487'),
-    _cssVar('--other-block4', '#e0a35c')
+    _cssVar("--other-block1", "#167f6e"),
+    _cssVar("--other-block2", "#2142b8"),
+    _cssVar("--other-block3", "#971487"),
+    _cssVar("--other-block4", "#e0a35c")
   ]
 };
 
-/* ============================================================
-   CSV parsing
-   ============================================================ */
+/* CSV parsing */
 function parseCSV(text) {
   const rows = [];
-  let row = [], field = '', inQuotes = false;
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
   for (let i = 0; i < text.length; i++) {
-    const c = text[i], next = text[i + 1];
+    const c = text[i];
+    const next = text[i + 1];
+
     if (inQuotes) {
-      if (c === '"' && next === '"') { field += '"'; i++; }
-      else if (c === '"') { inQuotes = false; }
-      else { field += c; }
+      if (c === '"' && next === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') {
+        inQuotes = false;
+      } else {
+        field += c;
+      }
     } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ',') { row.push(field); field = ''; }
-      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else if (c === '\r') { /* skip */ }
-      else field += c;
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ",") {
+        row.push(field);
+        field = "";
+      } else if (c === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else if (c !== "\r") {
+        field += c;
+      }
     }
   }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
+
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
   if (!rows.length) return [];
+
   const headers = rows[0].map(h => h.trim());
+
   return rows.slice(1)
-    .filter(r => r.some(f => (f || '').trim() !== ''))
+    .filter(r => r.some(f => (f || "").trim() !== ""))
     .map(r => {
       const obj = {};
-      headers.forEach((h, idx) => obj[h] = (r[idx] !== undefined ? r[idx].trim() : ''));
+      headers.forEach((h, index) => {
+        obj[h] = r[index] !== undefined ? r[index].trim() : "";
+      });
       return obj;
     });
 }
 
 function normalizeHeader(h) {
-  return String(h).toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-function findColumn(headers, candidates) {
-  const normMap = {};
-  headers.forEach(h => { normMap[normalizeHeader(h)] = h; });
-  for (const c of candidates) {
-    const n = normalizeHeader(c);
-    if (normMap[n]) return normMap[n];
-  }
-  return null;
-}
-function parsePercent(v) {
-  if (v === null || v === undefined || v === '') return NaN;
-  return parseFloat(String(v).replace('%', '').trim());
-}
-function ordinal(n) {
-  const s = ["th","st","nd","rd"], v = n % 100;
-  return n + (s[(v-20)%10] || s[v] || s[0]);
-}
-function fmtPct(n) {
-  return (Math.round(n * 10) / 10).toFixed(1) + '%';
+  return String(h).toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-/* ============================================================
-   Rendering
-   ============================================================ */
+function findColumn(headers, candidates) {
+  const normMap = {};
+
+  headers.forEach(h => {
+    normMap[normalizeHeader(h)] = h;
+  });
+
+  for (const candidate of candidates) {
+    const normalized = normalizeHeader(candidate);
+    if (normMap[normalized]) return normMap[normalized];
+  }
+
+  return null;
+}
+function mapUrl(title, address) {
+  const location = [title, address].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+}
+function parsePercent(v) {
+  if (v === null || v === undefined || v === "") return NaN;
+  return parseFloat(String(v).replace("%", "").trim());
+}
+
+function ordinal(n) {
+  const suffixes = ["th", "st", "nd", "rd"];
+  const value = n % 100;
+  return n + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
+}
+
+function fmtPct(n) {
+  return (Math.round(n * 10) / 10).toFixed(1) + "%";
+}
+
+/* Rendering */
 function showState(html) {
-  document.getElementById('card').innerHTML = `<div class="state">${html}</div>`;
+  document.getElementById("card").innerHTML = `<div class="state">${html}</div>`;
 }
 
 function buildChartSVG(combined, colorMap) {
-  const W = 380, H = 230;
-  const padL = 34, padR = 14, padT = 14, padB = 26;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const W = 380;
+  const H = 230;
+  const padL = 34;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
 
-  // ---- Y-AXIS SCALE ----
-  const MAX_HEADROOM = 1;         // space added ABOVE the highest data point, in percentage points
-  const MIN_HEADROOM = 1;         // space added BELOW the lowest data point, in percentage points
-  const AXIS_ROUND_TO = 1;        // snap the resulting min/max to the nearest multiple of this, for clean labels
-  const FORCE_ZERO_FLOOR = false; // true = axis always starts at 0, ignoring MIN_HEADROOM
+  const MAX_HEADROOM = 1;
+  const MIN_HEADROOM = 1;
+  const AXIS_ROUND_TO = 1;
+  const FORCE_ZERO_FLOOR = false;
 
-  const allVals = combined.flatMap(b => [b.t5, b.t3, b.tc]).filter(v => !isNaN(v));
+  const allVals = combined
+    .flatMap(b => [b.t5, b.t3, b.tc])
+    .filter(v => !isNaN(v));
+
   const highest = Math.max(...allVals);
   const lowest = Math.min(...allVals);
 
-  let maxVal = Math.ceil((highest + MAX_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO;
+  let maxVal =
+    Math.ceil((highest + MAX_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO;
+
   let minVal = FORCE_ZERO_FLOOR
     ? 0
-    : Math.max(0, Math.floor((lowest - MIN_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO);
-  if (minVal >= maxVal) minVal = 0; // safety fallback if data is a single flat value
+    : Math.max(
+        0,
+        Math.floor((lowest - MIN_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO
+      );
+
+  if (minVal >= maxVal) minVal = 0;
 
   const gridSteps = 4;
-
-  const xFor = i => padL + (plotW * i) / 2; // 3 categories: 0,1,2
-  const yFor = v => padT + plotH - (plotH * (v - minVal)) / (maxVal - minVal);
+  const xFor = i => padL + (plotW * i) / 2;
+  const yFor = v =>
+    padT + plotH - (plotH * (v - minVal)) / (maxVal - minVal);
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
 
-  // gridlines + y labels
   for (let g = 0; g <= gridSteps; g++) {
     const val = minVal + ((maxVal - minVal) / gridSteps) * g;
     const y = yFor(val);
-    svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e7ded0" stroke-width="1"/>`;
-    svg += `<text x="${padL - 8}" y="${y + 4}" font-size="11" fill="#8a8577" text-anchor="end" font-family="Inter,sans-serif">${Math.round(val)}</text>`;
+
+    svg += `
+      <line
+        x1="${padL}"
+        y1="${y}"
+        x2="${W - padR}"
+        y2="${y}"
+        stroke="#e7ded0"
+        stroke-width="1"
+      />
+      <text
+        x="${padL - 8}"
+        y="${y + 4}"
+        font-size="11"
+        fill="#8a8577"
+        text-anchor="end"
+        font-family="Inter, sans-serif"
+      >${Math.round(val)}</text>
+    `;
   }
 
-  // x labels
   const xLabels = ["5 days ago", "3 days ago", "Today"];
-  xLabels.forEach((lbl, i) => {
-    svg += `<text x="${xFor(i)}" y="${H - 6}" font-size="11" fill="#54545c" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600">${lbl}</text>`;
+
+  xLabels.forEach((label, i) => {
+    svg += `
+      <text
+        x="${xFor(i)}"
+        y="${H - 6}"
+        font-size="11"
+        fill="#54545c"
+        text-anchor="middle"
+        font-family="Inter, sans-serif"
+        font-weight="600"
+      >${label}</text>
+    `;
   });
 
-  // lines + points, subject drawn last so it sits on top
-  const order = [...combined].sort((a, b) => (a.isSubject === b.isSubject) ? 0 : (a.isSubject ? 1 : -1));
-  order.forEach(b => {
-    const pts = [b.t5, b.t3, b.tc].map((v, i) => `${xFor(i)},${yFor(isNaN(v) ? minVal : v)}`).join(' ');
-    const color = colorMap[b.id];
-    const dotRadius = b.isSubject ? 7 : 5;
-    const strokeWidth = b.isSubject ? 5 : 3;
+  const order = [...combined].sort((a, b) => {
+    if (a.isSubject === b.isSubject) return 0;
+    return a.isSubject ? 1 : -1;
+  });
 
-    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    [b.t5, b.t3, b.tc].forEach((v, i) => {
-      svg += `<circle cx="${xFor(i)}" cy="${yFor(isNaN(v) ? minVal : v)}" r="${dotRadius}" fill="${color}"/>`;
+  order.forEach(block => {
+    const points = [block.t5, block.t3, block.tc]
+      .map((value, i) => `${xFor(i)},${yFor(isNaN(value) ? minVal : value)}`)
+      .join(" ");
+
+    const color = colorMap[block.id];
+    const dotRadius = block.isSubject ? 7 : 5;
+    const strokeWidth = block.isSubject ? 5 : 3;
+
+    svg += `
+      <polyline
+        points="${points}"
+        fill="none"
+        stroke="${color}"
+        stroke-width="${strokeWidth}"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    `;
+
+    [block.t5, block.t3, block.tc].forEach((value, i) => {
+      svg += `
+        <circle
+          cx="${xFor(i)}"
+          cy="${yFor(isNaN(value) ? minVal : value)}"
+          r="${dotRadius}"
+          fill="${color}"
+        />
+      `;
     });
   });
 
-  svg += `</svg>`;
+  svg += "</svg>";
   return svg;
 }
 
 function render(subject, ranked, colorMap, subjectRank, total) {
   const chartSVG = buildChartSVG(ranked, colorMap);
 
-  const rankRows = ranked.map((b, i) => {
-    const cls = b.isSubject ? 'rankrow subject' : 'rankrow';
-    const color = b.isSubject ? '#fff' : colorMap[b.id];
-    return `
-      <div class="${cls}">
-        <span class="num" style="color:${color}">${i + 1}</span>
-        <span class="bname" style="color:${color}">${escapeHtml(b.name)}</span>
-        <span class="pct" style="color:${color}">${fmtPct(b.tc)}</span>
-      </div>`;
-  }).join('');
+  const rankRows = ranked.map((block, i) => {
+    const className = block.isSubject ? "rankrow subject" : "rankrow";
+    const color = block.isSubject ? "#fff" : colorMap[block.id];
 
-  document.getElementById('card').innerHTML = `
+    return `
+      <div class="${className}">
+        <span class="num" style="color:${color}">${i + 1}</span>
+        <span class="bname" style="color:${color}">
+          ${escapeHtml(block.name)}
+        </span>
+        <span class="pct" style="color:${color}">
+          ${fmtPct(block.tc)}
+        </span>
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("card").innerHTML = `
     <div class="pad">
       <div class="pill">${escapeHtml(subject.name)}</div>
+
       <div class="summary">
         <b>${fmtPct(subject.tc)}</b> of your block has voted. You are in
-        <b>${ordinal(subjectRank)} place </b> out of ${total} nearby blocks. 
-      </div>    
-      
-      <div class="chart-wrap">${chartSVG}</div>
-      <div class="ranklist open" id="rankList">${rankRows}</div>
-    </div>
-    <div class="banner">${escapeHtml(CONFIG.bannerText)}</div>
-    ${subject.evTitle ? `
-    <div class="ev-block">
-      <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
-      <div class="ev-address">${escapeHtml(subject.evAddress)}</div>
-      <div class="ev-hours-label">Hours</div>
-      <div class="ev-hours">${escapeHtml(subject.evHours).replace(/\n/g, '<br>')}</div>
-    </div>
-  ` : ''}
-  `;
+        <b>${ordinal(subjectRank)} place</b> out of ${total} nearby blocks.
+      </div>
 
-  
+      <div class="chart-wrap">${chartSVG}</div>
+
+      <div class="ranklist open" id="rankList">
+        ${rankRows}
+      </div>
+    </div>
+
+    <div class="banner">
+      ${escapeHtml(CONFIG.bannerText)}
+    </div>
+
+    ${subject.evTitle ? `
+        <div class="ev-block">
+            <div class="ev-details">
+            <a
+                class="ev-location"
+                href="${mapUrl(subject.evTitle, subject.evAddress)}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open ${escapeHtml(subject.evTitle)} in Google Maps"
+            >
+                <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
+                <br>
+                <div class="ev-address">${escapeHtml(subject.evAddress)}</div>
+            </a>
+
+            <div class="ev-hours-section">
+                <div class="ev-hours-label"></div>
+                <div class="ev-hours"> 
+                ${escapeHtml(subject.evHours).replace(/\n/g, "<br>")}
+                </div>
+            </div>
+            </div>
+        </div>
+        ` : ""}
+  `;
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
 }
 
-/* ============================================================
-   Main
-   ============================================================ */
+/* Main */
 async function main() {
-  if (!CONFIG.csvUrl || CONFIG.csvUrl.indexOf('PASTE_YOUR') === 0) {
-    showState(`This page isn't connected to a spreadsheet yet.<br><br>
-      Open the file and set <code>CONFIG.csvUrl</code> to your published Google Sheet CSV link
-      (File &rarr; Share &rarr; Publish to web &rarr; CSV).`);
+  if (!CONFIG.csvUrl || CONFIG.csvUrl.indexOf("PASTE_YOUR") === 0) {
+    showState(`
+      This page isn't connected to a spreadsheet yet.<br><br>
+      Open the file and set <code>CONFIG.csvUrl</code> to your published
+      Google Sheet CSV link.
+    `);
     return;
   }
 
   const params = new URLSearchParams(window.location.search);
   const queriedId = params.get(CONFIG.urlParam);
+
   if (!queriedId) {
-    showState(`No block specified.<br><br>Add <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code> to the URL.`);
+    showState(`
+      No block specified.<br><br>
+      Add <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code> to the URL.
+    `);
     return;
   }
 
   let text;
+
   try {
     const res = await fetch(CONFIG.csvUrl);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     text = await res.text();
   } catch (err) {
-    showState(`Couldn't load the spreadsheet.<br><br>${escapeHtml(err.message)}`);
+    showState(`
+      Couldn't load the spreadsheet.<br><br>
+      ${escapeHtml(err.message)}
+    `);
     return;
   }
 
   const rows = parseCSV(text);
-  if (!rows.length) { showState(`The spreadsheet appears to be empty.`); return; }
 
-  const headers = Object.keys(rows[0]);
-  const col = {};
-  for (const key in CONFIG.columns) {
-    col[key] = findColumn(headers, CONFIG.columns[key]);
-  }
-  if (!col.blockId || !col.blockName || !col.t5 || !col.t3 || !col.tc ||
-      !col.closest1 || !col.closest2 || !col.closest3 || !col.closest4) {
-    showState(`Couldn't find the expected columns in the spreadsheet.<br><br>
-      Check <code>CONFIG.columns</code> against your sheet's actual headers.`);
+  if (!rows.length) {
+    showState("The spreadsheet appears to be empty.");
     return;
   }
 
-  // dedupe by Block ID (handles one-row-per-voter files)
+  const headers = Object.keys(rows[0]);
+  const col = {};
+
+  for (const key in CONFIG.columns) {
+    col[key] = findColumn(headers, CONFIG.columns[key]);
+  }
+
+  if (
+    !col.blockId ||
+    !col.blockName ||
+    !col.t5 ||
+    !col.t3 ||
+    !col.tc ||
+    !col.closest1 ||
+    !col.closest2 ||
+    !col.closest3 ||
+    !col.closest4
+  ) {
+    showState(`
+      Couldn't find the expected columns in the spreadsheet.<br><br>
+      Check <code>CONFIG.columns</code> against your sheet's actual headers.
+    `);
+    return;
+  }
+
   const blocks = new Map();
-  rows.forEach(r => {
-    const id = r[col.blockId];
+
+  rows.forEach(row => {
+    const id = row[col.blockId];
+
     if (!id || blocks.has(id)) return;
-    let lat, lng;
+
+    let lat;
+    let lng;
+
     if (col.lat && col.lng) {
-      lat = parseFloat(r[col.lat]); lng = parseFloat(r[col.lng]);
+      lat = parseFloat(row[col.lat]);
+      lng = parseFloat(row[col.lng]);
     } else if (col.latlng) {
-      const parts = String(r[col.latlng]).split(',');
-      lat = parseFloat(parts[0]); lng = parseFloat(parts[1]);
+      const parts = String(row[col.latlng]).split(",");
+      lat = parseFloat(parts[0]);
+      lng = parseFloat(parts[1]);
     }
+
     blocks.set(id, {
       id,
-      name: r[col.blockName] || id,
-      lat, lng,
-      t5: parsePercent(r[col.t5]),
-      t3: parsePercent(r[col.t3]),
-      tc: parsePercent(r[col.tc]),
-        evTitle:   col.evTitle   ? r[col.evTitle]   : '',
-        evAddress: col.evAddress ? r[col.evAddress] : '',
-        evHours:   col.evHours   ? r[col.evHours]   : '',
-      closestIds: [col.closest1, col.closest2, col.closest3, col.closest4]
-        .map(c => (r[c] || '').trim())
-        .filter(Boolean),
+      name: row[col.blockName] || id,
+      lat,
+      lng,
+      t5: parsePercent(row[col.t5]),
+      t3: parsePercent(row[col.t3]),
+      tc: parsePercent(row[col.tc]),
+      evTitle: col.evTitle ? row[col.evTitle] : "",
+      evAddress: col.evAddress ? row[col.evAddress] : "",
+      evHours: col.evHours ? row[col.evHours] : "",
+      closestIds: [
+        col.closest1,
+        col.closest2,
+        col.closest3,
+        col.closest4
+      ]
+        .map(column => (row[column] || "").trim())
+        .filter(Boolean)
     });
   });
 
   const subject = blocks.get(queriedId);
+
   if (!subject) {
-    showState(`No block found for ID <code>${escapeHtml(queriedId)}</code>.<br><br>
-      Check that this ID exists in the Block ID column.`);
+    showState(`
+      No block found for ID <code>${escapeHtml(queriedId)}</code>.<br><br>
+      Check that this ID exists in the Block ID column.
+    `);
     return;
   }
+
   const nearest = subject.closestIds
     .map(id => blocks.get(id))
     .filter(Boolean);
 
   if (!nearest.length) {
-    showState(`No closest-block data found for <code>${escapeHtml(queriedId)}</code>.<br><br>
-      Check that the Closest Block ID columns are filled in for this block, and that those IDs
-      match values in the Block ID column.`);
+    showState(`
+      No closest-block data found for <code>${escapeHtml(queriedId)}</code>.<br><br>
+      Check the Closest Block ID columns and ensure the IDs match the
+      Block ID column.
+    `);
     return;
   }
 
   subject.isSubject = true;
-  const combined = [subject, ...nearest];
-  const ranked = [...combined].sort((a, b) => (b.tc || 0) - (a.tc || 0));
 
-  const colorMap = {};
-  let pi = 0;
-  ranked.forEach(b => {
-    colorMap[b.id] = b.isSubject ? COLOR_CONFIG.subject : COLOR_CONFIG.ranks[pi++];
+  const combined = [subject, ...nearest];
+
+  const ranked = [...combined].sort((a, b) => {
+    return (b.tc || 0) - (a.tc || 0);
   });
 
-  const subjectRank = ranked.findIndex(b => b.id === subject.id) + 1;
+  const colorMap = {};
+  let paletteIndex = 0;
+
+  ranked.forEach(block => {
+    colorMap[block.id] = block.isSubject
+      ? COLOR_CONFIG.subject
+      : COLOR_CONFIG.ranks[paletteIndex++];
+  });
+
+  const subjectRank =
+    ranked.findIndex(block => block.id === subject.id) + 1;
 
   render(subject, ranked, colorMap, subjectRank, ranked.length);
 }
 
 main();
 </script>
-
 </body>
 </html>
