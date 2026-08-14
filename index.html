@@ -371,7 +371,8 @@ function render(subject, ranked, colorMap, subjectRank, total) {
       <div class="pill">${escapeHtml(subject.name)}</div>
       <div class="summary">
         <b>${fmtPct(subject.tc)}</b> of your block has voted. You are in
-        <b>${ordinal(subjectRank)}</b> place out of ${total} closest neighboring blocks
+        <b>${ordinal(subjectRank)}</b> place out of ${total} closest neighboring blocks. 
+        <p>Share this with your block - and outvote your neighboring blocks!
       </div>
       
       <div class="chart-wrap">${chartSVG}</div>
