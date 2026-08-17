@@ -84,7 +84,7 @@
   .ev-details {
     display: flex;
     align-items: flex-start;
-    gap: 2px;
+    gap: 0px;
   }
 
   .ev-location {
@@ -105,20 +105,36 @@
     text-align: right;
   }
 
-  .ev-name,
+  .ev-name {
+    font-weight: 700;
+    font-size: 19px;
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+
   .ev-address {
     font-weight: 700;
     font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ev-address-text {
     text-decoration: underline;
   }
 
-  .ev-address {
-    margin-bottom: 0;
+  .ev-pin-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    fill: currentColor;
+    text-decoration: none;
   }
 
   .ev-hours-label {
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 500;
+    font-size: 13px;
     color: var(--ink-soft);
     margin-bottom: 0px;
   }
@@ -127,25 +143,26 @@
     font-size: 15px;
     line-height: 1.5;
   }
+
   .ev-location {
-  text-align: left;
-  color: var(--ink);
-  text-decoration: none;
-  display: block;
-  border-radius: 8px;
-  padding: 4px;
-  margin: -4px;
-  transition: background-color 0.15s ease;
-}
+    text-align: left;
+    color: var(--ink);
+    text-decoration: none;
+    display: block;
+    border-radius: 8px;
+    padding: 4px;
+    margin: -4px;
+    transition: background-color 0.15s ease;
+  }
 
-.ev-location:hover {
-  background: var(--cream);
-}
+  .ev-location:hover {
+    background: var(--cream);
+  }
 
-.ev-location:focus-visible {
-  outline: 3px solid var(--selected-block);
-  outline-offset: 3px;
-}
+  .ev-location:focus-visible {
+    outline: 3px solid var(--selected-block);
+    outline-offset: 3px;
+  }
 
   @media (max-width: 380px) {
     .ev-details {
@@ -157,6 +174,10 @@
     .ev-hours-section {
       width: 100%;
       text-align: center;
+    }
+
+    .ev-address {
+      justify-content: center;
     }
   }
 
@@ -594,8 +615,12 @@ function render(subject, ranked, colorMap, subjectRank, total) {
                 aria-label="Open ${escapeHtml(subject.evTitle)} in Google Maps"
             >
                 <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
-                <br>
-                <div class="ev-address">${escapeHtml(subject.evAddress)}</div>
+                <div class="ev-address">
+                  <svg class="ev-pin-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  <span class="ev-address-text">${escapeHtml(subject.evAddress)}</span>
+                </div>
             </a>
 
             <div class="ev-hours-section">
