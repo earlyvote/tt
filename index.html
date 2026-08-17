@@ -12,10 +12,10 @@
   :root {
     /* Palette — edit these five variables to change colors */
     --selected-block: hwb(132 0% 50%);
-    --other-block1: hsl(49, 100%, 35%);
-    --other-block2: #0069d1;
-    --other-block3: hwb(273 0% 32%);
-    --other-block4: rgb(142, 24, 112);
+    --other-block1: lab(51.71% 50.23 26.45);
+    --other-block2: hwb(226 26% 18%);
+    --other-block3: lch(54.46% 35.43 74.71);
+    --other-block4: hsl(298, 43%, 43%);
 
     --cream: #fdf6ec;
     --ink: #26262a;
@@ -412,7 +412,7 @@ function buildChartSVG(combined, colorMap) {
   const W = 380;
   const H = 230;
   const padL = 34;
-  const padR = 14;
+  const padR = 18;
   const padT = 14;
   const padB = 26;
   const plotW = W - padL - padR;
@@ -500,8 +500,8 @@ function buildChartSVG(combined, colorMap) {
       .join(" ");
 
     const color = colorMap[block.id];
-    const dotRadius = block.isSubject ? 7 : 5;
-    const strokeWidth = block.isSubject ? 5 : 3;
+    const dotRadius = block.isSubject ? 4 : 3;
+    const strokeWidth = block.isSubject ? 5 : 2;
 
     svg += `
       <polyline
