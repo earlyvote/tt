@@ -409,10 +409,10 @@ function showState(html) {
 }
 
 function buildChartSVG(combined, colorMap) {
-  const W = 380;
+    const W = 380;
   const H = 230;
   const padL = 34;
-  const padR = 10;
+  const padR = 20;
   const padT = 12;
   const padB = 26;
   const plotW = W - padL - padR;
@@ -443,6 +443,7 @@ function buildChartSVG(combined, colorMap) {
   if (minVal >= maxVal) minVal = 0;
 
   const gridSteps = 4;
+  const xFor = i => padL + (plotW * i) / 2;
   const yFor = v =>
     padT + plotH - (plotH * (v - minVal)) / (maxVal - minVal);
 
@@ -462,7 +463,7 @@ function buildChartSVG(combined, colorMap) {
         stroke-width="1"
       />
       <text
-        x="${padL - 11}"
+        x="${padL - 8}"
         y="${y + 4}"
         font-size="11"
         fill="#8a8577"
@@ -473,70 +474,56 @@ function buildChartSVG(combined, colorMap) {
   }
 
   const xLabels = ["5 days ago", "3 days ago", "Today"];
-  const timeKeys = ["t5", "t3", "tc"];
 
-  const nGroups = timeKeys.length;
-  const nBars = combined.length;
-
-  const groupGap = 30;
-  const barGap = 3;
-  const groupWidth = (plotW - groupGap * (nGroups - 1)) / nGroups;
-  const slotWidth = (groupWidth - barGap * (nBars - 1)) / nBars;
-  const OTHER_WIDTH_FACTOR = 0.5; // inactive blocks render slightly narrower
-  const baseline = yFor(minVal);
-
-  timeKeys.forEach((key, g) => {
-    const groupX = padL + g * (groupWidth + groupGap);
-
-    // Sort left-to-right by that timestamp's value: lowest turnout first.
-    const groupOrder = [...combined].sort((a, b) => {
-      const av = a[key];
-      const bv = b[key];
-      if (isNaN(av) && isNaN(bv)) return 0;
-      if (isNaN(av)) return 1;
-      if (isNaN(bv)) return -1;
-      return av - bv;
-    });
-
-    groupOrder.forEach((block, i) => {
-      const value = block[key];
-      const hasValue = !isNaN(value);
-      if (!hasValue) return;
-
-      const slotX = groupX + i * (slotWidth + barGap);
-      const barWidth = block.isSubject ? slotWidth : slotWidth * OTHER_WIDTH_FACTOR;
-      const barX = slotX + (slotWidth - barWidth) / 2;
-      const y = yFor(value);
-      const barH = Math.max(0, baseline - y);
-      const color = colorMap[block.id];
-
-      svg += `
-        <rect
-          x="${barX.toFixed(2)}"
-          y="${y.toFixed(2)}"
-          width="${barWidth.toFixed(2)}"
-          height="${barH.toFixed(2)}"
-          rx="2"
-          fill="${color}"
-          opacity="${block.isSubject ? 1 : 0.82}"
-          stroke="${block.isSubject ? "var(--ink)" : "none"}"
-          stroke-width="${block.isSubject ? 1.5 : 0}"
-        />
-      `;
-    });
-
-    const groupCenter = groupX + groupWidth / 2;
+  xLabels.forEach((label, i) => {
     svg += `
       <text
-        x="${groupCenter.toFixed(2)}"
+        x="${xFor(i)}"
         y="${H - 6}"
         font-size="11"
         fill="#54545c"
         text-anchor="middle"
         font-family="Inter, sans-serif"
         font-weight="600"
-      >${xLabels[g]}</text>
+      >${label}</text>
     `;
+  });
+
+  const order = [...combined].sort((a, b) => {
+    if (a.isSubject === b.isSubject) return 0;
+    return a.isSubject ? 1 : -1;
+  });
+
+  order.forEach(block => {
+    const points = [block.t5, block.t3, block.tc]
+      .map((value, i) => `${xFor(i)},${yFor(isNaN(value) ? minVal : value)}`)
+      .join(" ");
+
+    const color = colorMap[block.id];
+    const dotRadius = block.isSubject ? 4 : 3;
+    const strokeWidth = block.isSubject ? 5 : 2;
+
+    svg += `
+      <polyline
+        points="${points}"
+        fill="none"
+        stroke="${color}"
+        stroke-width="${strokeWidth}"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    `;
+
+    [block.t5, block.t3, block.tc].forEach((value, i) => {
+      svg += `
+        <circle
+          cx="${xFor(i)}"
+          cy="${yFor(isNaN(value) ? minVal : value)}"
+          r="${dotRadius}"
+          fill="${color}"
+        />
+      `;
+    });
   });
 
   svg += "</svg>";
