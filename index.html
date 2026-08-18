@@ -502,6 +502,8 @@ function buildChartSVG(combined, colorMap) {
   const groupGap = 30;
   const barGap = 3;
   const groupWidth = (plotW - groupGap * (nGroups - 1)) / nGroups;
+  // slotWidth is the "full" (subject-sized) bar width — the baseline every
+  // bar's width is derived from, so edge-to-edge gaps stay equal below.
   const slotWidth = (groupWidth - barGap * (nBars - 1)) / nBars;
   const OTHER_WIDTH_FACTOR = 0.5; // inactive blocks render slightly narrower
   const baseline = yFor(minVal);
@@ -519,14 +521,30 @@ function buildChartSVG(combined, colorMap) {
       return av - bv;
     });
 
+    // Compute each bar's actual width up front, then lay them out
+    // sequentially edge-to-edge with a fixed gap between them — instead of
+    // centering each bar inside an equal-width slot. Centering-in-a-slot
+    // means a narrower bar's edges drift inward on both sides, so the gap
+    // to its neighbors grows unevenly; laying out edge-to-edge keeps every
+    // gap between bars exactly barGap, regardless of width.
+    const widths = groupOrder.map(block =>
+      block.isSubject ? slotWidth : slotWidth * OTHER_WIDTH_FACTOR
+    );
+    const rowWidth =
+      widths.reduce((sum, w) => sum + w, 0) + barGap * (nBars - 1);
+    let cursorX = groupX + (groupWidth - rowWidth) / 2;
+
     groupOrder.forEach((block, i) => {
       const value = block[key];
       const hasValue = !isNaN(value);
-      if (!hasValue) return;
+      const barWidth = widths[i];
 
-      const slotX = groupX + i * (slotWidth + barGap);
-      const barWidth = block.isSubject ? slotWidth : slotWidth * OTHER_WIDTH_FACTOR;
-      const barX = slotX + (slotWidth - barWidth) / 2;
+      if (!hasValue) {
+        cursorX += barWidth + barGap;
+        return;
+      }
+
+      const barX = cursorX;
       const y = yFor(value);
       const barH = Math.max(0, baseline - y);
       const color = colorMap[block.id];
@@ -544,6 +562,8 @@ function buildChartSVG(combined, colorMap) {
           stroke-width="${block.isSubject ? 1.5 : 0}"
         />
       `;
+
+      cursorX += barWidth + barGap;
     });
 
     const groupCenter = groupX + groupWidth / 2;
