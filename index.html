@@ -10,7 +10,6 @@
 
 <style>
   :root {
-    /* Palette — edit these five variables to change colors */
     --selected-block: hwb(132 0% 50%);
     --other-block1: lab(51.71% 50.23 26.45);
     --other-block2: hwb(226 26% 18%);
@@ -31,7 +30,7 @@
   body {
     margin: 0;
     background: #fbf8f3;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
     color: var(--ink);
     display: flex;
     justify-content: center;
@@ -54,7 +53,7 @@
   .pill {
     background: var(--selected-block);
     color: #fff;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-weight: 700;
     font-size: 26px;
     line-height: 1.15;
@@ -76,7 +75,6 @@
     font-weight: 700;
   }
 
-  /* Early-voting details */
   .ev-block {
     padding: 10px 20px 10px;
   }
@@ -84,31 +82,31 @@
   .ev-details {
     display: flex;
     align-items: flex-start;
-    gap: 0px;
+    gap: 0;
   }
 
   .ev-location {
     flex: 2;
     min-width: 0;
+    text-align: left;
+    color: var(--ink);
+    text-decoration: none;
+    display: block;
+    border-radius: 8px;
+    padding: 4px;
+    margin: -4px;
+    transition: background-color 0.15s ease;
   }
 
   .ev-hours-section {
     flex: 3;
     min-width: 0;
-  }
-
-  .ev-location {
-    text-align: left;
-  }
-
-  .ev-hours-section {
     text-align: right;
   }
 
   .ev-name {
     font-weight: 700;
     font-size: 16px;
-    text-decoration: none;
     margin-bottom: 10px;
   }
 
@@ -117,7 +115,7 @@
     font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 0px;
+    gap: 0;
   }
 
   .ev-address-text {
@@ -129,30 +127,18 @@
     height: 15px;
     flex-shrink: 0;
     fill: currentColor;
-    text-decoration: none;
   }
 
   .ev-hours-label {
     font-weight: 500;
     font-size: 14px;
     color: var(--ink-soft);
-    margin-bottom: 0px;
+    margin-bottom: 0;
   }
 
   .ev-hours {
     font-size: 14px;
     line-height: 1.5;
-  }
-
-  .ev-location {
-    text-align: left;
-    color: var(--ink);
-    text-decoration: none;
-    display: block;
-    border-radius: 8px;
-    padding: 4px;
-    margin: -4px;
-    transition: background-color 0.15s ease;
   }
 
   .ev-location:hover {
@@ -196,13 +182,6 @@
 
   .ranklist {
     padding: 0 0 14px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease;
-  }
-
-  .ranklist.open {
-    max-height: 400px;
   }
 
   .rankrow {
@@ -240,7 +219,7 @@
     text-align: center;
     font-size: 17px;
     line-height: 1.5;
-    padding: 20px 20px;
+    padding: 20px;
     font-weight: 500;
   }
 
@@ -279,45 +258,24 @@
 
 <body>
   <div class="card" id="card">
-    <div class="state" id="state">
+    <div class="state">
       <div class="spinner"></div>
       Loading block data&hellip;
     </div>
   </div>
 
 <script>
-/* ============================================================
-   CONFIG — edit these two things for your sheet
-   ============================================================ */
 const CONFIG = {
-  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9oI8bhCHF8bLPdRsk8z3boucRuvoj72ABxxaSLExldGszEE1Pe6uoIE7LwByWPZiLNCuhXsZpcFGs/pub?gid=0&single=true&output=csv",
-
   urlParam: "block",
-
-  bannerText: "Get your nextdoor neighbors to vote at your closest early voting location",
-
-  columns: {
-    evTitle: ["Closest Early Voting Location Title", "EV Location Title"],
-    evAddress: ["Closest Early Voting Location Address", "EV Location Address"],
-    evHours: ["Closest Early Voting Location Hours", "EV Location Hours"],
-    blockId: ["Block ID", "BlockID"],
-    blockName: ["Block Name", "BlockName"],
-    lat: ["Block Latitude", "Latitude", "Lat"],
-    lng: ["Block Longitude", "Longitude", "Lng", "Long"],
-    latlng: ["Block Latitude & Longitude", "Block Lat/Long", "Lat/Long"],
-    t5: ["Block Turnout - 5 days ago", "Block Turnout 5 days ago", "Turnout 5 days ago"],
-    t3: ["Block Turnout - 3 days ago", "Block Turnout 3 days ago", "Turnout 3 days ago"],
-    tc: ["Block Turnout - Current", "Block Turnout Current", "Current Turnout"],
-    closest1: ["Closest Block ID 1", "Closest Block ID1", "Nearest Block ID 1"],
-    closest2: ["Closest Block ID 2", "Closest Block ID2", "Nearest Block ID 2"],
-    closest3: ["Closest Block ID 3", "Closest Block ID3", "Nearest Block ID 3"],
-    closest4: ["Closest Block ID 4", "Closest Block ID4", "Nearest Block ID 4"]
-  }
+  dataDirectory: "data/blocks",
+  bannerText: "Get your nextdoor neighbors to vote at your closest early voting location"
 };
 
 function _cssVar(name, fallback) {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name);
-  return v ? v.trim() : fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name);
+
+  return value ? value.trim() : fallback;
 }
 
 const COLOR_CONFIG = {
@@ -330,88 +288,19 @@ const COLOR_CONFIG = {
   ]
 };
 
-/* CSV parsing */
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    const next = text[i + 1];
-
-    if (inQuotes) {
-      if (c === '"' && next === '"') {
-        field += '"';
-        i++;
-      } else if (c === '"') {
-        inQuotes = false;
-      } else {
-        field += c;
-      }
-    } else {
-      if (c === '"') {
-        inQuotes = true;
-      } else if (c === ",") {
-        row.push(field);
-        field = "";
-      } else if (c === "\n") {
-        row.push(field);
-        rows.push(row);
-        row = [];
-        field = "";
-      } else if (c !== "\r") {
-        field += c;
-      }
-    }
-  }
-
-  if (field.length || row.length) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  if (!rows.length) return [];
-
-  const headers = rows[0].map(h => h.trim());
-
-  return rows.slice(1)
-    .filter(r => r.some(f => (f || "").trim() !== ""))
-    .map(r => {
-      const obj = {};
-      headers.forEach((h, index) => {
-        obj[h] = r[index] !== undefined ? r[index].trim() : "";
-      });
-      return obj;
-    });
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[character]));
 }
 
-function normalizeHeader(h) {
-  return String(h).toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function findColumn(headers, candidates) {
-  const normMap = {};
-
-  headers.forEach(h => {
-    normMap[normalizeHeader(h)] = h;
-  });
-
-  for (const candidate of candidates) {
-    const normalized = normalizeHeader(candidate);
-    if (normMap[normalized]) return normMap[normalized];
-  }
-
-  return null;
-}
 function mapUrl(title, address) {
   const location = [title, address].filter(Boolean).join(", ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
-}
-function parsePercent(v) {
-  if (v === null || v === undefined || v === "") return NaN;
-  return parseFloat(String(v).replace("%", "").trim());
 }
 
 function ordinal(n) {
@@ -420,13 +309,20 @@ function ordinal(n) {
   return n + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
 }
 
-function fmtPct(n) {
-  return (Math.round(n * 10) / 10).toFixed(1) + "%";
+function fmtPct(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "—";
+  }
+
+  return `${(Math.round(number * 10) / 10).toFixed(1)}%`;
 }
 
-/* Rendering */
 function showState(html) {
-  document.getElementById("card").innerHTML = `<div class="state">${html}</div>`;
+  document.getElementById("card").innerHTML = `
+    <div class="state">${html}</div>
+  `;
 }
 
 function buildChartSVG(combined, colorMap) {
@@ -444,15 +340,32 @@ function buildChartSVG(combined, colorMap) {
   const AXIS_ROUND_TO = 1;
   const FORCE_ZERO_FLOOR = false;
 
-  const allVals = combined
-    .flatMap(b => [b.t5, b.t3, b.tc])
-    .filter(v => !isNaN(v));
+  const allValues = combined
+    .flatMap(block => [block.t5, block.t3, block.tc])
+    .filter(value => Number.isFinite(Number(value)))
+    .map(Number);
 
-  const highest = Math.max(...allVals);
-  const lowest = Math.min(...allVals);
+  if (!allValues.length) {
+    return `
+      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <text
+          x="${W / 2}"
+          y="${H / 2}"
+          font-size="14"
+          fill="#54545c"
+          text-anchor="middle"
+          font-family="Inter, sans-serif"
+        >No turnout data available</text>
+      </svg>
+    `;
+  }
 
-  let maxVal =
-    Math.ceil((highest + MAX_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO;
+  const highest = Math.max(...allValues);
+  const lowest = Math.min(...allValues);
+
+  let maxVal = Math.ceil(
+    (highest + MAX_HEADROOM) / AXIS_ROUND_TO
+  ) * AXIS_ROUND_TO;
 
   let minVal = FORCE_ZERO_FLOOR
     ? 0
@@ -461,17 +374,21 @@ function buildChartSVG(combined, colorMap) {
         Math.floor((lowest - MIN_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO
       );
 
-  if (minVal >= maxVal) minVal = 0;
+  if (minVal >= maxVal) {
+    minVal = 0;
+    maxVal = Math.max(1, highest + 1);
+  }
 
   const gridSteps = 4;
-  const yFor = v =>
-    padT + plotH - (plotH * (v - minVal)) / (maxVal - minVal);
+
+  const yFor = value =>
+    padT + plotH - (plotH * (Number(value) - minVal)) / (maxVal - minVal);
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
 
-  for (let g = 0; g <= gridSteps; g++) {
-    const val = minVal + ((maxVal - minVal) / gridSteps) * g;
-    const y = yFor(val);
+  for (let grid = 0; grid <= gridSteps; grid++) {
+    const value = minVal + ((maxVal - minVal) / gridSteps) * grid;
+    const y = yFor(value);
 
     svg += `
       <line
@@ -489,76 +406,70 @@ function buildChartSVG(combined, colorMap) {
         fill="#8a8577"
         text-anchor="end"
         font-family="Inter, sans-serif"
-      >${Math.round(val)}%</text>
+      >${Math.round(value)}%</text>
     `;
   }
 
   const xLabels = ["5 days ago", "3 days ago", "Today"];
   const timeKeys = ["t5", "t3", "tc"];
-
   const nGroups = timeKeys.length;
   const nBars = combined.length;
 
   const groupGap = 30;
   const barGap = 3;
   const groupWidth = (plotW - groupGap * (nGroups - 1)) / nGroups;
-  // slotWidth is the "full" (subject-sized) bar width — the baseline every
-  // bar's width is derived from, so edge-to-edge gaps stay equal below.
   const slotWidth = (groupWidth - barGap * (nBars - 1)) / nBars;
-  const OTHER_WIDTH_FACTOR = 0.5; // inactive blocks render slightly narrower
+  const OTHER_WIDTH_FACTOR = 0.5;
   const baseline = yFor(minVal);
 
-  timeKeys.forEach((key, g) => {
-    const groupX = padL + g * (groupWidth + groupGap);
+  timeKeys.forEach((key, groupIndex) => {
+    const groupX = padL + groupIndex * (groupWidth + groupGap);
 
-    // Sort left-to-right by that timestamp's value: lowest turnout first.
     const groupOrder = [...combined].sort((a, b) => {
-      const av = a[key];
-      const bv = b[key];
-      if (isNaN(av) && isNaN(bv)) return 0;
-      if (isNaN(av)) return 1;
-      if (isNaN(bv)) return -1;
-      return av - bv;
+      const aValue = Number(a[key]);
+      const bValue = Number(b[key]);
+
+      if (!Number.isFinite(aValue) && !Number.isFinite(bValue)) return 0;
+      if (!Number.isFinite(aValue)) return 1;
+      if (!Number.isFinite(bValue)) return -1;
+
+      return aValue - bValue;
     });
 
-    // Compute each bar's actual width up front, then lay them out
-    // sequentially edge-to-edge with a fixed gap between them — instead of
-    // centering each bar inside an equal-width slot. Centering-in-a-slot
-    // means a narrower bar's edges drift inward on both sides, so the gap
-    // to its neighbors grows unevenly; laying out edge-to-edge keeps every
-    // gap between bars exactly barGap, regardless of width.
     const widths = groupOrder.map(block =>
       block.isSubject ? slotWidth : slotWidth * OTHER_WIDTH_FACTOR
     );
+
     const rowWidth =
-      widths.reduce((sum, w) => sum + w, 0) + barGap * (nBars - 1);
+      widths.reduce((sum, width) => sum + width, 0) +
+      barGap * (nBars - 1);
+
     let cursorX = groupX + (groupWidth - rowWidth) / 2;
 
-    groupOrder.forEach((block, i) => {
-      const value = block[key];
-      const hasValue = !isNaN(value);
-      const barWidth = widths[i];
+    groupOrder.forEach((block, index) => {
+      const value = Number(block[key]);
+      const hasValue = Number.isFinite(value);
+      const barWidth = widths[index];
 
       if (!hasValue) {
         cursorX += barWidth + barGap;
         return;
       }
 
-      const barX = cursorX;
       const y = yFor(value);
-      const barH = Math.max(0, baseline - y);
+      const barHeight = Math.max(0, baseline - y);
       const color = colorMap[block.id];
 
       svg += `
         <rect
-          x="${barX.toFixed(2)}"
+          x="${cursorX.toFixed(2)}"
           y="${y.toFixed(2)}"
           width="${barWidth.toFixed(2)}"
-          height="${barH.toFixed(2)}"
+          height="${barHeight.toFixed(2)}"
           rx="2"
           fill="${color}"
           opacity="${block.isSubject ? 1 : 0.82}"
-          stroke="${block.isSubject ? "var(--ink)" : "none"}"
+          stroke="${block.isSubject ? "#26262a" : "none"}"
           stroke-width="${block.isSubject ? 1.5 : 0}"
         />
       `;
@@ -567,6 +478,7 @@ function buildChartSVG(combined, colorMap) {
     });
 
     const groupCenter = groupX + groupWidth / 2;
+
     svg += `
       <text
         x="${groupCenter.toFixed(2)}"
@@ -576,7 +488,7 @@ function buildChartSVG(combined, colorMap) {
         text-anchor="middle"
         font-family="Inter, sans-serif"
         font-weight="600"
-      >${xLabels[g]}</text>
+      >${xLabels[groupIndex]}</text>
     `;
   });
 
@@ -587,13 +499,18 @@ function buildChartSVG(combined, colorMap) {
 function render(subject, ranked, colorMap, subjectRank, total) {
   const chartSVG = buildChartSVG(ranked, colorMap);
 
-  const rankRows = ranked.map((block, i) => {
-    const className = block.isSubject ? "rankrow subject" : "rankrow";
-    const color = block.isSubject ? "#fff" : colorMap[block.id];
+  const rankRows = ranked.map((block, index) => {
+    const className = block.isSubject
+      ? "rankrow subject"
+      : "rankrow";
+
+    const color = block.isSubject
+      ? "#ffffff"
+      : colorMap[block.id];
 
     return `
       <div class="${className}">
-        <span class="num" style="color:${color}">${i + 1}</span>
+        <span class="num" style="color:${color}">${index + 1}</span>
         <span class="bname" style="color:${color}">
           ${escapeHtml(block.name)}
         </span>
@@ -615,7 +532,7 @@ function render(subject, ranked, colorMap, subjectRank, total) {
 
       <div class="chart-wrap">${chartSVG}</div>
 
-      <div class="ranklist open" id="rankList">
+      <div class="ranklist open">
         ${rankRows}
       </div>
     </div>
@@ -625,61 +542,44 @@ function render(subject, ranked, colorMap, subjectRank, total) {
     </div>
 
     ${subject.evTitle ? `
-        <div class="ev-block">
-            <div class="ev-details">
-            <a
-                class="ev-location"
-                href="${mapUrl(subject.evTitle, subject.evAddress)}"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open ${escapeHtml(subject.evTitle)} in Google Maps"
-            >
-                <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
-                <div class="ev-address">
-                  <svg class="ev-pin-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                  </svg>
-                  <span class="ev-address-text">${escapeHtml(subject.evAddress)}</span>
-                </div>
-            </a>
+      <div class="ev-block">
+        <div class="ev-details">
+          <a
+            class="ev-location"
+            href="${mapUrl(subject.evTitle, subject.evAddress)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open ${escapeHtml(subject.evTitle)} in Google Maps"
+          >
+            <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
 
-            <div class="ev-hours-section">
-                <div class="ev-hours-label"></div>
-                <div class="ev-hours"> 
-                ${escapeHtml(subject.evHours).replace(/\n/g, "<br>")}
-                </div>
+            <div class="ev-address">
+              <svg class="ev-pin-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+
+              <span class="ev-address-text">
+                ${escapeHtml(subject.evAddress)}
+              </span>
             </div>
+          </a>
+
+          <div class="ev-hours-section">
+            <div class="ev-hours">
+              ${escapeHtml(subject.evHours).replace(/\n/g, "<br>")}
             </div>
+          </div>
         </div>
-        ` : ""}
+      </div>
+    ` : ""}
   `;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[c]));
-}
-
-/* Main */
 async function main() {
-  if (!CONFIG.csvUrl || CONFIG.csvUrl.indexOf("PASTE_YOUR") === 0) {
-    showState(`
-      This page isn't connected to a spreadsheet yet.<br><br>
-      Open the file and set <code>CONFIG.csvUrl</code> to your published
-      Google Sheet CSV link.
-    `);
-    return;
-  }
-
   const params = new URLSearchParams(window.location.search);
-  const queriedId = params.get(CONFIG.urlParam);
+  const rawBlockId = params.get(CONFIG.urlParam);
 
-  if (!queriedId) {
+  if (!rawBlockId) {
     showState(`
       No block specified.<br><br>
       Add <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code> to the URL.
@@ -687,122 +587,79 @@ async function main() {
     return;
   }
 
-  let text;
+  /*
+    encodeURIComponent is important here. It lets IDs containing spaces,
+    hyphens, slashes, or other special characters resolve safely as URLs.
+  */
+  const blockId = rawBlockId.trim();
+  const jsonUrl =
+    `${CONFIG.dataDirectory}/${encodeURIComponent(blockId)}.json`;
+
+  let payload;
 
   try {
-    const res = await fetch(CONFIG.csvUrl);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    text = await res.text();
-  } catch (err) {
-    showState(`
-      Couldn't load the spreadsheet.<br><br>
-      ${escapeHtml(err.message)}
-    `);
-    return;
-  }
+    const response = await fetch(jsonUrl, {
+      cache: "no-cache"
+    });
 
-  const rows = parseCSV(text);
-
-  if (!rows.length) {
-    showState("The spreadsheet appears to be empty.");
-    return;
-  }
-
-  const headers = Object.keys(rows[0]);
-  const col = {};
-
-  for (const key in CONFIG.columns) {
-    col[key] = findColumn(headers, CONFIG.columns[key]);
-  }
-
-  if (
-    !col.blockId ||
-    !col.blockName ||
-    !col.t5 ||
-    !col.t3 ||
-    !col.tc ||
-    !col.closest1 ||
-    !col.closest2 ||
-    !col.closest3 ||
-    !col.closest4
-  ) {
-    showState(`
-      Couldn't find the expected columns in the spreadsheet.<br><br>
-      Check <code>CONFIG.columns</code> against your sheet's actual headers.
-    `);
-    return;
-  }
-
-  const blocks = new Map();
-
-  rows.forEach(row => {
-    const id = row[col.blockId];
-
-    if (!id || blocks.has(id)) return;
-
-    let lat;
-    let lng;
-
-    if (col.lat && col.lng) {
-      lat = parseFloat(row[col.lat]);
-      lng = parseFloat(row[col.lng]);
-    } else if (col.latlng) {
-      const parts = String(row[col.latlng]).split(",");
-      lat = parseFloat(parts[0]);
-      lng = parseFloat(parts[1]);
+    if (response.status === 404) {
+      showState(`
+        No block found for ID
+        <code>${escapeHtml(blockId)}</code>.
+      `);
+      return;
     }
 
-    blocks.set(id, {
-      id,
-      name: row[col.blockName] || id,
-      lat,
-      lng,
-      t5: parsePercent(row[col.t5]),
-      t3: parsePercent(row[col.t3]),
-      tc: parsePercent(row[col.tc]),
-      evTitle: col.evTitle ? row[col.evTitle] : "",
-      evAddress: col.evAddress ? row[col.evAddress] : "",
-      evHours: col.evHours ? row[col.evHours] : "",
-      closestIds: [
-        col.closest1,
-        col.closest2,
-        col.closest3,
-        col.closest4
-      ]
-        .map(column => (row[column] || "").trim())
-        .filter(Boolean)
-    });
-  });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-  const subject = blocks.get(queriedId);
-
-  if (!subject) {
+    payload = await response.json();
+  } catch (error) {
     showState(`
-      No block found for ID <code>${escapeHtml(queriedId)}</code>.<br><br>
-      Check that this ID exists in the Block ID column.
+      Couldn't load block data.<br><br>
+      ${escapeHtml(error.message)}
     `);
     return;
   }
 
-  const nearest = subject.closestIds
-    .map(id => blocks.get(id))
-    .filter(Boolean);
+  const subject = payload.subject;
+  const nearbyBlocks = Array.isArray(payload.nearbyBlocks)
+    ? payload.nearbyBlocks
+    : [];
 
-  if (!nearest.length) {
+  if (!subject || !subject.id) {
     showState(`
-      No closest-block data found for <code>${escapeHtml(queriedId)}</code>.<br><br>
-      Check the Closest Block ID columns and ensure the IDs match the
-      Block ID column.
+      The data file for <code>${escapeHtml(blockId)}</code>
+      is incomplete or invalid.
     `);
     return;
   }
 
   subject.isSubject = true;
 
-  const combined = [subject, ...nearest];
+  const combined = [
+    subject,
+    ...nearbyBlocks.filter(block => block && block.id)
+  ];
 
-  const ranked = [...combined].sort((a, b) => {
-    return (b.tc || 0) - (a.tc || 0);
+  const uniqueBlocks = Array.from(
+    new Map(combined.map(block => [block.id, block])).values()
+  );
+
+  if (uniqueBlocks.length < 2) {
+    showState(`
+      No nearby-block data found for
+      <code>${escapeHtml(blockId)}</code>.
+    `);
+    return;
+  }
+
+  const ranked = [...uniqueBlocks].sort((a, b) => {
+    const aTurnout = Number.isFinite(Number(a.tc)) ? Number(a.tc) : -Infinity;
+    const bTurnout = Number.isFinite(Number(b.tc)) ? Number(b.tc) : -Infinity;
+
+    return bTurnout - aTurnout;
   });
 
   const colorMap = {};
@@ -811,13 +668,19 @@ async function main() {
   ranked.forEach(block => {
     colorMap[block.id] = block.isSubject
       ? COLOR_CONFIG.subject
-      : COLOR_CONFIG.ranks[paletteIndex++];
+      : COLOR_CONFIG.ranks[paletteIndex++ % COLOR_CONFIG.ranks.length];
   });
 
   const subjectRank =
     ranked.findIndex(block => block.id === subject.id) + 1;
 
-  render(subject, ranked, colorMap, subjectRank, ranked.length);
+  render(
+    subject,
+    ranked,
+    colorMap,
+    subjectRank,
+    ranked.length
+  );
 }
 
 main();
