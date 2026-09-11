@@ -1,10 +1,14 @@
 name: Update Block Data
 
 on:
-  schedule:
-    - cron: "0 10 * * *"   # Every day at 10:00 UTC
+  push:
+    branches:
+      - main
 
-  workflow_dispatch:       # Lets you run it manually
+  schedule:
+    - cron: "0 10 * * *"
+
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,7 +28,15 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Cache generated block JSON
+        id: cache-blocks
+        uses: actions/cache@v4
+        with:
+          path: build/data/blocks
+          key: blocks-${{ hashFiles('data/blocks.csv', 'data/early_voting.csv') }}
+
       - name: Generate block JSON files
+        if: steps.cache-blocks.outputs.cache-hit != 'true'
         run: python scripts/generate_blocks.py
 
       - name: Copy static site files into build
