@@ -264,6 +264,7 @@
     </div>
   </div>
 
+```html
 <script>
 const CONFIG = {
   urlParam: "block",
@@ -306,7 +307,12 @@ function mapUrl(title, address) {
 function ordinal(n) {
   const suffixes = ["th", "st", "nd", "rd"];
   const value = n % 100;
-  return n + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
+
+  return n + (
+    suffixes[(value - 20) % 10]
+    || suffixes[value]
+    || suffixes[0]
+  );
 }
 
 function fmtPct(value) {
@@ -324,6 +330,150 @@ function showState(html) {
     <div class="state">${html}</div>
   `;
 }
+
+
+/*
+  ------------------------------------------------------------
+  CONVERT ONE FLAT JSON BLOCK INTO THE SMALL OBJECT USED
+  BY THE EXISTING DISPLAY CODE
+  ------------------------------------------------------------
+
+  The Python script creates JSON like:
+
+  {
+    "block_id": "...",
+    "block_plain": "...",
+    "pct_voted_current": 12.3,
+    "pct_voted_3days": 8.5,
+    "pct_voted_1week": 4.2,
+    ...
+  }
+
+  The website wants:
+
+  {
+    id: "...",
+    name: "...",
+    tc: 12.3,
+    t3: 8.5,
+    t5: 4.2
+  }
+*/
+
+function makeDisplayBlock(data, prefix = "") {
+  const get = field => {
+    return data[`${prefix}${field}`];
+  };
+
+  return {
+    id: get("id") ?? get("block_id"),
+    name: get("name") ?? get("block_plain"),
+
+    // Chart values
+    t5: get("pct_voted_1week"),
+    t3: get("pct_voted_3days"),
+    tc: get("pct_voted_current")
+  };
+}
+
+
+/*
+  ------------------------------------------------------------
+  CONVERT THE JSON FILE INTO:
+      subject
+      nearbyBlocks
+
+  This is the bridge between the new Python-generated JSON
+  and the existing UI.
+  ------------------------------------------------------------
+*/
+
+function convertPayload(payload) {
+
+  // ----------------------------------------------------------
+  // SUBJECT BLOCK
+  // ----------------------------------------------------------
+
+  const subject = {
+    id: payload.block_id,
+    name: payload.block_plain,
+
+    t5: payload.pct_voted_1week,
+    t3: payload.pct_voted_3days,
+    tc: payload.pct_voted_current,
+
+    isSubject: true,
+
+    // Early voting information
+    evTitle: payload.main_ev_name,
+
+    evAddress: [
+      payload.main_ev_street_address,
+      payload.main_ev_city,
+      payload.main_ev_zip
+    ].filter(Boolean).join(", "),
+
+    evHours: [
+      payload.main_ev_monday_friday
+        ? `Mon–Fri: ${payload.main_ev_monday_friday}`
+        : null,
+
+      payload.main_ev_sat
+        ? `Sat: ${payload.main_ev_sat}`
+        : null,
+
+      payload.main_ev_sun
+        ? `Sun: ${payload.main_ev_sun}`
+        : null
+    ].filter(Boolean).join("\n")
+  };
+
+
+  // ----------------------------------------------------------
+  // NEARBY BLOCKS
+  // ----------------------------------------------------------
+
+  const nearbyBlocks = [];
+
+  for (let i = 1; i <= 4; i++) {
+
+    const id = payload[`nearest_neighbor_${i}_id`];
+
+    // Skip an empty neighbor
+    if (!id) {
+      continue;
+    }
+
+    nearbyBlocks.push({
+      id: id,
+
+      name: payload[
+        `nearest_neighbor_${i}_plain`
+      ],
+
+      t5: payload[
+        `nearest_neighbor_${i}_pct_voted_1week`
+      ],
+
+      t3: payload[
+        `nearest_neighbor_${i}_pct_voted_3days`
+      ],
+
+      tc: payload[
+        `nearest_neighbor_${i}_pct_voted_current`
+      ],
+
+      isSubject: false
+    });
+  }
+
+
+  return {
+    subject,
+    nearbyBlocks
+  };
+}
+
 
 function buildChartSVG(combined, colorMap) {
   const W = 380;
@@ -371,7 +521,9 @@ function buildChartSVG(combined, colorMap) {
     ? 0
     : Math.max(
         0,
-        Math.floor((lowest - MIN_HEADROOM) / AXIS_ROUND_TO) * AXIS_ROUND_TO
+        Math.floor(
+          (lowest - MIN_HEADROOM) / AXIS_ROUND_TO
+        ) * AXIS_ROUND_TO
       );
 
   if (minVal >= maxVal) {
@@ -382,12 +534,27 @@ function buildChartSVG(combined, colorMap) {
   const gridSteps = 4;
 
   const yFor = value =>
-    padT + plotH - (plotH * (Number(value) - minVal)) / (maxVal - minVal);
+    padT
+    + plotH
+    - (
+        plotH
+        * (Number(value) - minVal)
+      )
+      / (maxVal - minVal);
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `
+    <svg
+      viewBox="0 0 ${W} ${H}"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+  `;
 
   for (let grid = 0; grid <= gridSteps; grid++) {
-    const value = minVal + ((maxVal - minVal) / gridSteps) * grid;
+
+    const value =
+      minVal
+      + ((maxVal - minVal) / gridSteps) * grid;
+
     const y = yFor(value);
 
     svg += `
@@ -399,6 +566,7 @@ function buildChartSVG(combined, colorMap) {
         stroke="#e7ded0"
         stroke-width="1"
       />
+
       <text
         x="${padL - 11}"
         y="${y + 4}"
@@ -410,45 +578,84 @@ function buildChartSVG(combined, colorMap) {
     `;
   }
 
-  const xLabels = ["5 days ago", "3 days ago", "Today"];
+  // The source data has 1 week ago, not 5 days ago.
+  const xLabels = [
+    "1 week ago",
+    "3 days ago",
+    "Today"
+  ];
+
   const timeKeys = ["t5", "t3", "tc"];
+
   const nGroups = timeKeys.length;
   const nBars = combined.length;
 
   const groupGap = 30;
   const barGap = 3;
-  const groupWidth = (plotW - groupGap * (nGroups - 1)) / nGroups;
-  const slotWidth = (groupWidth - barGap * (nBars - 1)) / nBars;
+
+  const groupWidth =
+    (plotW - groupGap * (nGroups - 1))
+    / nGroups;
+
+  const slotWidth =
+    (groupWidth - barGap * (nBars - 1))
+    / nBars;
+
   const OTHER_WIDTH_FACTOR = 0.5;
+
   const baseline = yFor(minVal);
 
   timeKeys.forEach((key, groupIndex) => {
-    const groupX = padL + groupIndex * (groupWidth + groupGap);
+
+    const groupX =
+      padL
+      + groupIndex * (groupWidth + groupGap);
 
     const groupOrder = [...combined].sort((a, b) => {
+
       const aValue = Number(a[key]);
       const bValue = Number(b[key]);
 
-      if (!Number.isFinite(aValue) && !Number.isFinite(bValue)) return 0;
-      if (!Number.isFinite(aValue)) return 1;
-      if (!Number.isFinite(bValue)) return -1;
+      if (
+        !Number.isFinite(aValue)
+        && !Number.isFinite(bValue)
+      ) {
+        return 0;
+      }
+
+      if (!Number.isFinite(aValue)) {
+        return 1;
+      }
+
+      if (!Number.isFinite(bValue)) {
+        return -1;
+      }
 
       return aValue - bValue;
     });
 
     const widths = groupOrder.map(block =>
-      block.isSubject ? slotWidth : slotWidth * OTHER_WIDTH_FACTOR
+      block.isSubject
+        ? slotWidth
+        : slotWidth * OTHER_WIDTH_FACTOR
     );
 
     const rowWidth =
-      widths.reduce((sum, width) => sum + width, 0) +
-      barGap * (nBars - 1);
+      widths.reduce(
+        (sum, width) => sum + width,
+        0
+      )
+      + barGap * (nBars - 1);
 
-    let cursorX = groupX + (groupWidth - rowWidth) / 2;
+    let cursorX =
+      groupX
+      + (groupWidth - rowWidth) / 2;
 
     groupOrder.forEach((block, index) => {
+
       const value = Number(block[key]);
       const hasValue = Number.isFinite(value);
+
       const barWidth = widths[index];
 
       if (!hasValue) {
@@ -457,7 +664,10 @@ function buildChartSVG(combined, colorMap) {
       }
 
       const y = yFor(value);
-      const barHeight = Math.max(0, baseline - y);
+
+      const barHeight =
+        Math.max(0, baseline - y);
+
       const color = colorMap[block.id];
 
       svg += `
@@ -477,7 +687,8 @@ function buildChartSVG(combined, colorMap) {
       cursorX += barWidth + barGap;
     });
 
-    const groupCenter = groupX + groupWidth / 2;
+    const groupCenter =
+      groupX + groupWidth / 2;
 
     svg += `
       <text
@@ -493,186 +704,389 @@ function buildChartSVG(combined, colorMap) {
   });
 
   svg += "</svg>";
+
   return svg;
 }
 
-function render(subject, ranked, colorMap, subjectRank, total) {
-  const chartSVG = buildChartSVG(ranked, colorMap);
 
-  const rankRows = ranked.map((block, index) => {
-    const className = block.isSubject
-      ? "rankrow subject"
-      : "rankrow";
+function render(
+  subject,
+  ranked,
+  colorMap,
+  subjectRank,
+  total
+) {
 
-    const color = block.isSubject
-      ? "#ffffff"
-      : colorMap[block.id];
+  const chartSVG =
+    buildChartSVG(ranked, colorMap);
 
-    return `
-      <div class="${className}">
-        <span class="num" style="color:${color}">${index + 1}</span>
-        <span class="bname" style="color:${color}">
-          ${escapeHtml(block.name)}
-        </span>
-        <span class="pct" style="color:${color}">
-          ${fmtPct(block.tc)}
-        </span>
-      </div>
-    `;
-  }).join("");
+  const rankRows = ranked.map(
+    (block, index) => {
+
+      const className =
+        block.isSubject
+          ? "rankrow subject"
+          : "rankrow";
+
+      const color =
+        block.isSubject
+          ? "#ffffff"
+          : colorMap[block.id];
+
+      return `
+        <div class="${className}">
+
+          <span
+            class="num"
+            style="color:${color}"
+          >
+            ${index + 1}
+          </span>
+
+          <span
+            class="bname"
+            style="color:${color}"
+          >
+            ${escapeHtml(block.name)}
+          </span>
+
+          <span
+            class="pct"
+            style="color:${color}"
+          >
+            ${fmtPct(block.tc)}
+          </span>
+
+        </div>
+      `;
+    }
+  ).join("");
+
 
   document.getElementById("card").innerHTML = `
-    <div class="pad">
-      <div class="pill">${escapeHtml(subject.name)}</div>
 
-      <div class="summary">
-        <b>${fmtPct(subject.tc)}</b> of your block has voted. You are in
-        <b>${ordinal(subjectRank)} place</b> out of ${total} nearby blocks.
+    <div class="pad">
+
+      <div class="pill">
+        ${escapeHtml(subject.name)}
       </div>
 
-      <div class="chart-wrap">${chartSVG}</div>
+      <div class="summary">
+
+        <b>${fmtPct(subject.tc)}</b>
+        of your block has voted.
+
+        You are in
+        <b>${ordinal(subjectRank)} place</b>
+        out of ${total} nearby blocks.
+
+      </div>
+
+      <div class="chart-wrap">
+        ${chartSVG}
+      </div>
 
       <div class="ranklist open">
         ${rankRows}
       </div>
+
     </div>
+
 
     <div class="banner">
       ${escapeHtml(CONFIG.bannerText)}
     </div>
 
-    ${subject.evTitle ? `
-      <div class="ev-block">
-        <div class="ev-details">
-          <a
-            class="ev-location"
-            href="${mapUrl(subject.evTitle, subject.evAddress)}"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open ${escapeHtml(subject.evTitle)} in Google Maps"
-          >
-            <div class="ev-name">${escapeHtml(subject.evTitle)}</div>
 
-            <div class="ev-address">
-              <svg class="ev-pin-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
+    ${
+      subject.evTitle
+        ? `
+          <div class="ev-block">
 
-              <span class="ev-address-text">
-                ${escapeHtml(subject.evAddress)}
-              </span>
+            <div class="ev-details">
+
+              <a
+                class="ev-location"
+                href="${mapUrl(
+                  subject.evTitle,
+                  subject.evAddress
+                )}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open ${escapeHtml(
+                  subject.evTitle
+                )} in Google Maps"
+              >
+
+                <div class="ev-name">
+                  ${escapeHtml(subject.evTitle)}
+                </div>
+
+                <div class="ev-address">
+
+                  <svg
+                    class="ev-pin-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5 1.12 2.5 2.5 2.5z"/>
+                  </svg>
+
+                  <span class="ev-address-text">
+                    ${escapeHtml(
+                      subject.evAddress
+                    )}
+                  </span>
+
+                </div>
+
+              </a>
+
+
+              <div class="ev-hours-section">
+
+                <div class="ev-hours">
+                  ${escapeHtml(
+                    subject.evHours
+                  ).replace(/\n/g, "<br>")}
+                </div>
+
+              </div>
+
             </div>
-          </a>
 
-          <div class="ev-hours-section">
-            <div class="ev-hours">
-              ${escapeHtml(subject.evHours).replace(/\n/g, "<br>")}
-            </div>
           </div>
-        </div>
-      </div>
-    ` : ""}
+        `
+        : ""
+    }
+
   `;
 }
 
+
 async function main() {
-  const params = new URLSearchParams(window.location.search);
-  const rawBlockId = params.get(CONFIG.urlParam);
+
+  // ----------------------------------------------------------
+  // GET BLOCK ID FROM URL
+  // ----------------------------------------------------------
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const rawBlockId =
+    params.get(CONFIG.urlParam);
+
 
   if (!rawBlockId) {
+
     showState(`
       No block specified.<br><br>
-      Add <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code> to the URL.
+
+      Add
+      <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code>
+      to the URL.
     `);
+
     return;
   }
 
+
   /*
-    encodeURIComponent is important here. It lets IDs containing spaces,
-    hyphens, slashes, or other special characters resolve safely as URLs.
+    encodeURIComponent is important here.
+
+    It allows IDs containing spaces, hyphens,
+    slashes, or other special characters to be
+    safely used as filenames/URLs.
   */
-  const blockId = rawBlockId.trim();
+
+  const blockId =
+    rawBlockId.trim();
+
   const jsonUrl =
-    `${CONFIG.dataDirectory}/${encodeURIComponent(blockId)}.json`;
+    `${CONFIG.dataDirectory}/${encodeURIComponent(
+      blockId
+    )}.json`;
+
+
+  // ----------------------------------------------------------
+  // LOAD ONLY THIS BLOCK'S JSON
+  // ----------------------------------------------------------
 
   let payload;
 
   try {
-    const response = await fetch(jsonUrl, {
-      cache: "no-cache"
-    });
+
+    const response =
+      await fetch(jsonUrl, {
+        cache: "no-cache"
+      });
+
 
     if (response.status === 404) {
+
       showState(`
         No block found for ID
         <code>${escapeHtml(blockId)}</code>.
       `);
+
       return;
     }
 
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+
     }
 
-    payload = await response.json();
+
+    payload =
+      await response.json();
+
   } catch (error) {
+
     showState(`
       Couldn't load block data.<br><br>
       ${escapeHtml(error.message)}
     `);
+
     return;
   }
 
-  const subject = payload.subject;
-  const nearbyBlocks = Array.isArray(payload.nearbyBlocks)
-    ? payload.nearbyBlocks
-    : [];
 
-  if (!subject || !subject.id) {
+  // ----------------------------------------------------------
+  // VALIDATE THE JSON
+  // ----------------------------------------------------------
+
+  if (
+    !payload
+    || !payload.block_id
+  ) {
+
     showState(`
-      The data file for <code>${escapeHtml(blockId)}</code>
+      The data file for
+      <code>${escapeHtml(blockId)}</code>
       is incomplete or invalid.
     `);
+
     return;
   }
 
-  subject.isSubject = true;
+
+  // ----------------------------------------------------------
+  // CONVERT FLAT JSON INTO DISPLAY OBJECTS
+  // ----------------------------------------------------------
+
+  const {
+    subject,
+    nearbyBlocks
+  } = convertPayload(payload);
+
+
+  // ----------------------------------------------------------
+  // COMBINE SUBJECT + FOUR NEIGHBORS
+  // ----------------------------------------------------------
 
   const combined = [
     subject,
-    ...nearbyBlocks.filter(block => block && block.id)
+    ...nearbyBlocks
   ];
 
-  const uniqueBlocks = Array.from(
-    new Map(combined.map(block => [block.id, block])).values()
-  );
+
+  // Remove duplicates in case a neighbor
+  // happens to equal the subject.
+
+  const uniqueBlocks =
+    Array.from(
+      new Map(
+        combined
+          .filter(
+            block => block && block.id
+          )
+          .map(
+            block => [block.id, block]
+          )
+      ).values()
+    );
+
 
   if (uniqueBlocks.length < 2) {
+
     showState(`
       No nearby-block data found for
       <code>${escapeHtml(blockId)}</code>.
     `);
+
     return;
   }
 
-  const ranked = [...uniqueBlocks].sort((a, b) => {
-    const aTurnout = Number.isFinite(Number(a.tc)) ? Number(a.tc) : -Infinity;
-    const bTurnout = Number.isFinite(Number(b.tc)) ? Number(b.tc) : -Infinity;
 
-    return bTurnout - aTurnout;
-  });
+  // ----------------------------------------------------------
+  // RANK BY CURRENT TURNOUT
+  // ----------------------------------------------------------
+
+  const ranked =
+    [...uniqueBlocks].sort(
+      (a, b) => {
+
+        const aTurnout =
+          Number.isFinite(
+            Number(a.tc)
+          )
+            ? Number(a.tc)
+            : -Infinity;
+
+        const bTurnout =
+          Number.isFinite(
+            Number(b.tc)
+          )
+            ? Number(b.tc)
+            : -Infinity;
+
+        return bTurnout - aTurnout;
+      }
+    );
+
+
+  // ----------------------------------------------------------
+  // ASSIGN COLORS
+  // ----------------------------------------------------------
 
   const colorMap = {};
+
   let paletteIndex = 0;
 
   ranked.forEach(block => {
-    colorMap[block.id] = block.isSubject
-      ? COLOR_CONFIG.subject
-      : COLOR_CONFIG.ranks[paletteIndex++ % COLOR_CONFIG.ranks.length];
+
+    colorMap[block.id] =
+      block.isSubject
+        ? COLOR_CONFIG.subject
+        : COLOR_CONFIG.ranks[
+            paletteIndex++
+            % COLOR_CONFIG.ranks.length
+          ];
+
   });
 
+
+  // ----------------------------------------------------------
+  // FIND SUBJECT'S RANK
+  // ----------------------------------------------------------
+
   const subjectRank =
-    ranked.findIndex(block => block.id === subject.id) + 1;
+    ranked.findIndex(
+      block =>
+        block.id === subject.id
+    ) + 1;
+
+
+  // ----------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------
 
   render(
     subject,
@@ -683,7 +1097,10 @@ async function main() {
   );
 }
 
+
 main();
 </script>
+```
+
 </body>
 </html>
