@@ -27,6 +27,9 @@ jobs:
       - name: Generate block JSON files
         run: python scripts/generate_blocks.py
 
+      - name: Copy static site files into build
+        run: cp index.html build/index.html
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
