@@ -322,7 +322,7 @@ function fmtPct(value) {
     return "—";
   }
 
-  return `${(Math.round(number * 10) / 10).toFixed(1)}%`;
+  return `${(Math.round(number * 10) / 10).toFixed(0)}%`;
 }
 
 function showState(html) {
