@@ -264,10 +264,10 @@
     </div>
   </div>
 
-```html
 <script>
 const CONFIG = {
   urlParam: "block",
+  earlyParam: "early",
   dataDirectory: "data/blocks",
   bannerText: "Get your nextdoor neighbors to vote at your closest early voting location"
 };
@@ -346,6 +346,9 @@ function showState(html) {
     "pct_voted_current": 12.3,
     "pct_voted_3days": 8.5,
     "pct_voted_1week": 4.2,
+    "pct_voted_2024": ...,
+    "pct_voted_2022": ...,
+    "pct_voted_2020": ...,
     ...
   }
 
@@ -358,12 +361,28 @@ function showState(html) {
     t3: 8.5,
     t5: 4.2
   }
+
+  When the "early" toggle is on, t5/t3/tc are instead
+  pulled from the 2020/2022/2024 general-election columns,
+  for both the subject block and each of its neighbors.
 */
 
-function makeDisplayBlock(data, prefix = "") {
+function makeDisplayBlock(data, prefix = "", early = false) {
   const get = field => {
     return data[`${prefix}${field}`];
   };
+
+  if (early) {
+    return {
+      id: get("id") ?? get("block_id"),
+      name: get("name") ?? get("block_plain"),
+
+      // Chart values (general elections)
+      t5: get("pct_voted_2020"),
+      t3: get("pct_voted_2022"),
+      tc: get("pct_voted_2024")
+    };
+  }
 
   return {
     id: get("id") ?? get("block_id"),
@@ -385,10 +404,15 @@ function makeDisplayBlock(data, prefix = "") {
 
   This is the bridge between the new Python-generated JSON
   and the existing UI.
+
+  `early` switches t5/t3/tc from the current-cycle
+  1-week-ago / 3-days-ago / today fields to the
+  2020 / 2022 / 2024 general-election fields, for the
+  subject block and each of its up-to-four neighbors.
   ------------------------------------------------------------
 */
 
-function convertPayload(payload) {
+function convertPayload(payload, early = false) {
 
   // ----------------------------------------------------------
   // SUBJECT BLOCK
@@ -398,9 +422,9 @@ function convertPayload(payload) {
     id: payload.block_id,
     name: payload.block_plain,
 
-    t5: payload.pct_voted_1week,
-    t3: payload.pct_voted_3days,
-    tc: payload.pct_voted_current,
+    t5: early ? payload.pct_voted_2020 : payload.pct_voted_1week,
+    t3: early ? payload.pct_voted_2022 : payload.pct_voted_3days,
+    tc: early ? payload.pct_voted_2024 : payload.pct_voted_current,
 
     isSubject: true,
 
@@ -451,17 +475,17 @@ function convertPayload(payload) {
         `nearest_neighbor_${i}_plain`
       ],
 
-      t5: payload[
-        `nearest_neighbor_${i}_pct_voted_1week`
-      ],
+      t5: early
+        ? payload[`nearest_neighbor_${i}_pct_voted_2020`]
+        : payload[`nearest_neighbor_${i}_pct_voted_1week`],
 
-      t3: payload[
-        `nearest_neighbor_${i}_pct_voted_3days`
-      ],
+      t3: early
+        ? payload[`nearest_neighbor_${i}_pct_voted_2022`]
+        : payload[`nearest_neighbor_${i}_pct_voted_3days`],
 
-      tc: payload[
-        `nearest_neighbor_${i}_pct_voted_current`
-      ],
+      tc: early
+        ? payload[`nearest_neighbor_${i}_pct_voted_2024`]
+        : payload[`nearest_neighbor_${i}_pct_voted_current`],
 
       isSubject: false
     });
@@ -475,7 +499,7 @@ function convertPayload(payload) {
 }
 
 
-function buildChartSVG(combined, colorMap) {
+function buildChartSVG(combined, colorMap, early = false) {
   const W = 380;
   const H = 230;
   const padL = 34;
@@ -578,12 +602,12 @@ function buildChartSVG(combined, colorMap) {
     `;
   }
 
-  // The source data has 1 week ago, not 5 days ago.
-  const xLabels = [
-    "1 week ago",
-    "3 days ago",
-    "Today"
-  ];
+  // In the default (non-early) view the source data is
+  // 1 week ago, not 5 days ago. In the early view, t5/t3/tc
+  // map to the 2020/2022/2024 general elections instead.
+  const xLabels = early
+    ? ["2020", "2022", "2024"]
+    : ["1 week ago", "3 days ago", "Today"];
 
   const timeKeys = ["t5", "t3", "tc"];
 
@@ -714,11 +738,12 @@ function render(
   ranked,
   colorMap,
   subjectRank,
-  total
+  total,
+  early = false
 ) {
 
   const chartSVG =
-    buildChartSVG(ranked, colorMap);
+    buildChartSVG(ranked, colorMap, early);
 
   const rankRows = ranked.map(
     (block, index) => {
@@ -867,7 +892,7 @@ function render(
 async function main() {
 
   // ----------------------------------------------------------
-  // GET BLOCK ID FROM URL
+  // GET BLOCK ID AND EARLY-TOGGLE FROM URL
   // ----------------------------------------------------------
 
   const params =
@@ -877,6 +902,9 @@ async function main() {
 
   const rawBlockId =
     params.get(CONFIG.urlParam);
+
+  const early =
+    params.get(CONFIG.earlyParam) === "true";
 
 
   if (!rawBlockId) {
@@ -984,7 +1012,7 @@ async function main() {
   const {
     subject,
     nearbyBlocks
-  } = convertPayload(payload);
+  } = convertPayload(payload, early);
 
 
   // ----------------------------------------------------------
@@ -1093,7 +1121,8 @@ async function main() {
     ranked,
     colorMap,
     subjectRank,
-    ranked.length
+    ranked.length,
+    early
   );
 }
 
