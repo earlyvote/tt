@@ -535,7 +535,11 @@ function buildChartSVG(combined, colorMap, early = false) {
   }
 
   const highest = Math.max(...allValues);
-  const lowest = Math.min(...allValues);
+  // const lowest = Math.min(...allValues);
+
+  const lowest = early
+    ? 0
+    : Math.min(...allValues);
 
   let maxVal = Math.ceil(
     (highest + MAX_HEADROOM) / AXIS_ROUND_TO
