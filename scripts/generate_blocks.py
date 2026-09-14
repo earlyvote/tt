@@ -88,26 +88,27 @@ def haversine_miles(lat1, lon1, lat2, lon2):
 def load_early_voting_locations():
     """
     Read the early voting CSV and organize locations by
-    state + county.
+    state + county_fips.
     """
 
     required_columns = {
-        "state",
-        "county",
-        "main_ev_name",
-        "main_ev_street_address",
-        "main_ev_city",
-        "main_ev_zip",
-        "main_ev_lat",
-        "main_ev_long",
-        "registrar_phone",
-        "main_ev_monday_friday",
-        "main_ev_sat",
-        "main_ev_sun",
-        "county_ev_lookup_link",
+        "ev_state",
+        "ev_county",
+        "ev_name",
+        "ev_street_address",
+        "ev_city",
+        "ev_zip",
+        "ev_lat",
+        "ev_long",
+        "ev_registrar_phone",
+        "ev_monday_friday",
+        "ev_sat",
+        "ev_sun",
+        "ev_county_lookup_link",
+        "ev_county_fips"
     }
 
-    locations_by_state_county = {}
+    locations_by_state_fips = {}
     locations_by_state = []
 
     with EARLY_VOTING_CSV.open(
@@ -131,11 +132,11 @@ def load_early_voting_locations():
 
         for row in reader:
 
-            state = clean(row["state"]).upper()
-            county = clean(row["county"]).upper()
+            state = clean(row["ev_state"]).upper()
+            county_fips = clean(row["ev_county_fips"])
 
-            lat = to_coordinate(row["main_ev_lat"])
-            lon = to_coordinate(row["main_ev_long"])
+            lat = to_coordinate(row["ev_lat"])
+            lon = to_coordinate(row["ev_long"])
 
             # We cannot calculate distance without coordinates.
             if not state or lat is None or lon is None:
@@ -143,41 +144,42 @@ def load_early_voting_locations():
 
             location = {
                 "state": state,
-                "county": county,
+                "county": clean(row["ev_county"]),
+                "county_fips": county_fips,
 
-                "main_ev_name": clean(row["main_ev_name"]),
+                "main_ev_name": clean(row["ev_name"]),
                 "main_ev_street_address": clean(
-                    row["main_ev_street_address"]
+                    row["ev_street_address"]
                 ),
-                "main_ev_city": clean(row["main_ev_city"]),
-                "main_ev_zip": clean(row["main_ev_zip"]),
+                "main_ev_city": clean(row["ev_city"]),
+                "main_ev_zip": clean(row["ev_zip"]),
 
                 "main_ev_lat": lat,
                 "main_ev_long": lon,
 
-                "registrar_phone": clean(row["registrar_phone"]),
+                "registrar_phone": clean(row["ev_registrar_phone"]),
 
                 "main_ev_monday_friday": clean(
-                    row["main_ev_monday_friday"]
+                    row["ev_monday_friday"]
                 ),
-                "main_ev_sat": clean(row["main_ev_sat"]),
-                "main_ev_sun": clean(row["main_ev_sun"]),
+                "main_ev_sat": clean(row["ev_sat"]),
+                "main_ev_sun": clean(row["ev_sun"]),
 
                 "county_ev_lookup_link": clean(
-                    row["county_ev_lookup_link"]
+                    row["ev_county_lookup_link"]
                 ),
             }
 
-            key = (state, county)
+            key = (state, county_fips)
 
-            if key not in locations_by_state_county:
-                locations_by_state_county[key] = []
+            if key not in locations_by_state_fips:
+                locations_by_state_fips[key] = []
 
-            locations_by_state_county[key].append(location)
+            locations_by_state_fips[key].append(location)
 
             locations_by_state.append(location)
 
-    return locations_by_state_county, locations_by_state
+    return locations_by_state_fips, locations_by_state
 
 
 # ------------------------------------------------------------
@@ -188,29 +190,29 @@ def find_closest_early_voting_location(
     block_lat,
     block_lon,
     state,
-    county,
-    locations_by_state_county,
+    county_fips,
+    locations_by_state_fips,
     locations_by_state,
 ):
     """
     Find the closest early voting location.
 
-    First searches the same state + county.
+    First searches the same state + county_fips.
 
     If none exist, searches the entire state.
     """
 
     state = clean(state).upper()
-    county = clean(county).upper()
+    county_fips = clean(county_fips)
 
-    candidates = locations_by_state_county.get(
-        (state, county),
+    candidates = locations_by_state_fips.get(
+        (state, county_fips),
         []
     )
 
     statewide_fallback = False
 
-    # If there are no county locations, search the state.
+    # If there are no county FIPS locations, search the state.
     if not candidates:
         candidates = [
             location
@@ -275,7 +277,7 @@ def generate_block_files():
     print("Loading early voting locations...")
 
     (
-        locations_by_state_county,
+        locations_by_state_fips,
         locations_by_state,
     ) = load_early_voting_locations()
 
@@ -311,7 +313,7 @@ def generate_block_files():
             "block_id",
             "block_latitude",
             "block_longitude",
-            "county",
+            "county_fips",
             "state",
         }
 
@@ -377,8 +379,8 @@ def generate_block_files():
                     block_lat,
                     block_lon,
                     row["state"],
-                    row["county"],
-                    locations_by_state_county,
+                    row["county_fips"],
+                    locations_by_state_fips,
                     locations_by_state,
                 )
 
@@ -402,7 +404,7 @@ def generate_block_files():
                 output["main_ev_monday_friday"] = ""
                 output["main_ev_sat"] = ""
                 output["main_ev_sun"] = ""
-                output["county_ev_lookup_link"] = ""
+                output["ev_county_lookup_link"] = ""
                 output["main_ev_distance_miles"] = None
                 output["main_ev_state"] = ""
                 output["main_ev_county"] = ""
