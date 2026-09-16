@@ -37,7 +37,7 @@
     box-sizing: border-box;
   }
 
-  
+
   body {
     margin: 0;
     background: #fbf8f3;
@@ -379,7 +379,7 @@ function showState(html) {
   for both the subject block and each of its neighbors.
 */
 
-function makeDisplayBlock(data, prefix = "", early = false) {
+function makeDisplayBlock(data, prefix = "", early = true) {
   const get = field => {
     return data[`${prefix}${field}`];
   };
