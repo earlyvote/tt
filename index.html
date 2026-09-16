@@ -424,7 +424,7 @@ function makeDisplayBlock(data, prefix = "", early = true) {
   ------------------------------------------------------------
 */
 
-function convertPayload(payload, early = false) {
+function convertPayload(payload, early = true) {
 
   // ----------------------------------------------------------
   // SUBJECT BLOCK
@@ -511,7 +511,7 @@ function convertPayload(payload, early = false) {
 }
 
 
-function buildChartSVG(combined, colorMap, early = false) {
+function buildChartSVG(combined, colorMap, early = true) {
   const W = 380;
   const H = 230;
   const padL = 34;
@@ -755,7 +755,7 @@ function render(
   colorMap,
   subjectRank,
   total,
-  early = false
+  early = true
 ) {
 
   const chartSVG =
