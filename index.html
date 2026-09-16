@@ -260,6 +260,11 @@
     font-weight: 500;
   }
 
+  .banner a {
+  color: #f9f9f9; /* Replace with your preferred color */
+  text-decoration: underline; /* Keeps the link recognizable */
+}
+
   .state {
     padding: 60px 26px;
     text-align: center;
@@ -896,6 +901,7 @@ function render(
                 </div>
               </div>
             </div>
+            <a href="http://vavoter.net/evlist">More locations available here</a>
             
           </div>
         `
@@ -906,7 +912,6 @@ function render(
       subject.registrarCounty && subject.registrarNumber
         ? `
           <div class="banner">
-            <a href="http://vavoter.net/evlist">More locations available here</a>. <br>
             Questions about voting? Call your
             ${escapeHtml(subject.registrarCounty)}
             Registrar at
