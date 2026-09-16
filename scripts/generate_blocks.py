@@ -10,7 +10,7 @@ from pathlib import Path
 # ------------------------------------------------------------
 
 BLOCKS_CSV = Path("data/blocks.csv")
-EARLY_VOTING_CSV = Path("data/early_voting.csv")
+EARLY_VOTING_CSV = Path("data/ev_locations_test.csv")
 
 OUTPUT_DIR = Path("build/data/blocks")
 
