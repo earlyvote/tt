@@ -36,7 +36,7 @@ jobs:
           key: blocks-${{ hashFiles('data/blocks.csv', 'data/early_voting.csv') }}
 
       - name: Generate block JSON files
-        if: steps.cache-blocks.outputs.cache-hit != 'true'
+        # if: steps.cache-blocks.outputs.cache-hit != 'true'
         run: python scripts/generate_blocks.py
 
       - name: Copy static site files into build
