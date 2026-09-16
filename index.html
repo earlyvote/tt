@@ -306,7 +306,7 @@ const CONFIG = {
   urlParam: "block",
   earlyParam: "early",
   dataDirectory: "data/blocks",
-  bannerText: "Get your nextdoor neighbors to vote at your closest early voting location"
+  bannerText: "Get your nextdoor neighbors to vote at your closest early voting location open now"
 };
 
 function _cssVar(name, fallback) {
@@ -896,6 +896,7 @@ function render(
                 </div>
               </div>
             </div>
+            
           </div>
         `
         : ""
@@ -905,12 +906,14 @@ function render(
       subject.registrarCounty && subject.registrarNumber
         ? `
           <div class="registrar-block">
-            Questions? Call your
+            <a href="http://vavoter.net/evlist">More locations available here</a>.
+            Questions about voting? Call your
             ${escapeHtml(subject.registrarCounty)}
             Registrar at
             <a href="tel:${registrarPhoneForTel}">
               ${escapeHtml(subject.registrarNumber)}
             </a>
+            
           </div>
         `
         : ""
