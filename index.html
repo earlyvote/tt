@@ -912,7 +912,7 @@ async function main() {
     params.get(CONFIG.urlParam);
 
   const early =
-    params.get(CONFIG.earlyParam) === "true";
+    params.get(CONFIG.earlyParam) !== "false";
 
 
   if (!rawBlockId) {
