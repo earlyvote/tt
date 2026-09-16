@@ -433,6 +433,9 @@ function convertPayload(payload, early = true) {
   const subject = {
     id: payload.block_id,
     name: payload.block_plain,
+    registrarCounty: payload.county,
+    registrarNumber: payload.ev_registrar_phone,
+
 
     t5: early ? payload.pct_voted_2020 : payload.pct_voted_1week,
     t3: early ? payload.pct_voted_2022 : payload.pct_voted_3days,
@@ -749,6 +752,153 @@ function buildChartSVG(combined, colorMap, early = true) {
 }
 
 
+// function render(
+//   subject,
+//   ranked,
+//   colorMap,
+//   subjectRank,
+//   total,
+//   early = true
+// ) {
+
+//   const chartSVG =
+//     buildChartSVG(ranked, colorMap, early);
+
+//   const rankRows = ranked.map(
+//     (block, index) => {
+
+//       const className =
+//         block.isSubject
+//           ? "rankrow subject"
+//           : "rankrow";
+
+//       const color =
+//         block.isSubject
+//           ? "#ffffff"
+//           : colorMap[block.id];
+
+//       return `
+//         <div class="${className}">
+
+//           <span
+//             class="num"
+//             style="color:${color}"
+//           >
+//             ${index + 1}
+//           </span>
+
+//           <span
+//             class="bname"
+//             style="color:${color}"
+//           >
+//             ${escapeHtml(block.name)}
+//           </span>
+
+//           <span
+//             class="pct"
+//             style="color:${color}"
+//           >
+//             ${fmtPct(block.tc)}
+//           </span>
+
+//         </div>
+//       `;
+//     }
+//   ).join("");
+
+
+//   document.getElementById("card").innerHTML = `
+
+//     <div class="pad">
+
+//       <div class="pill">
+//         ${escapeHtml(subject.name)}
+//       </div>
+
+//       <div class="summary">
+
+//         <b>${fmtPct(subject.tc)}</b>
+//         of your block has voted.
+
+//         You are in
+//         <b>${ordinal(subjectRank)} place</b>
+//         out of ${total} nearby blocks.
+
+//       </div>
+
+//       <div class="chart-wrap">
+//         ${chartSVG}
+//       </div>
+
+//       <div class="ranklist open">
+//         ${rankRows}
+//       </div>
+
+//     </div>
+
+
+//     <div class="banner">
+//       ${escapeHtml(CONFIG.bannerText)}
+//     </div>
+
+
+//     ${
+//       subject.evTitle
+//         ? `
+//           <div class="ev-block">
+
+//             <div class="ev-details">
+
+//               <a
+//                 class="ev-location"
+//                 href="${mapUrl(
+//                   subject.evTitle,
+//                   subject.evAddress
+//                 )}"
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 aria-label="Open ${escapeHtml(
+//                   subject.evTitle
+//                 )} in Google Maps"
+//               >
+
+//                 <div class="ev-name">
+//                   ${escapeHtml(subject.evTitle)}
+//                 </div>
+
+//                 <div class="ev-address">
+
+//                   <span class="ev-address-text">
+//                     ${escapeHtml(
+//                       subject.evAddress
+//                     )}
+//                   </span>
+
+//                 </div>
+
+//               </a>
+
+
+//               <div class="ev-hours-section">
+
+//                 <div class="ev-hours">
+//                   ${escapeHtml(
+//                     subject.evHours
+//                   ).replace(/\n/g, "<br>")}
+//                 </div>
+
+//               </div>
+
+//             </div>
+
+//           </div>
+        
+//         `
+//         : ""
+//     }
+
+//   `;
+// }
 function render(
   subject,
   ranked,
@@ -757,13 +907,11 @@ function render(
   total,
   early = true
 ) {
-
   const chartSVG =
     buildChartSVG(ranked, colorMap, early);
 
   const rankRows = ranked.map(
     (block, index) => {
-
       const className =
         block.isSubject
           ? "rankrow subject"
@@ -776,7 +924,6 @@ function render(
 
       return `
         <div class="${className}">
-
           <span
             class="num"
             style="color:${color}"
@@ -797,30 +944,28 @@ function render(
           >
             ${fmtPct(block.tc)}
           </span>
-
         </div>
       `;
     }
   ).join("");
 
+  const registrarPhoneForTel =
+    String(subject.registrarNumber ?? "")
+      .replace(/[^\d+]/g, "");
 
   document.getElementById("card").innerHTML = `
-
     <div class="pad">
-
       <div class="pill">
         ${escapeHtml(subject.name)}
       </div>
 
       <div class="summary">
-
         <b>${fmtPct(subject.tc)}</b>
         of your block has voted.
 
         You are in
         <b>${ordinal(subjectRank)} place</b>
         out of ${total} nearby blocks.
-
       </div>
 
       <div class="chart-wrap">
@@ -830,22 +975,17 @@ function render(
       <div class="ranklist open">
         ${rankRows}
       </div>
-
     </div>
-
 
     <div class="banner">
       ${escapeHtml(CONFIG.bannerText)}
     </div>
 
-
     ${
       subject.evTitle
         ? `
           <div class="ev-block">
-
             <div class="ev-details">
-
               <a
                 class="ev-location"
                 href="${mapUrl(
@@ -858,44 +998,47 @@ function render(
                   subject.evTitle
                 )} in Google Maps"
               >
-
                 <div class="ev-name">
                   ${escapeHtml(subject.evTitle)}
                 </div>
 
                 <div class="ev-address">
-
                   <span class="ev-address-text">
-                    ${escapeHtml(
-                      subject.evAddress
-                    )}
+                    ${escapeHtml(subject.evAddress)}
                   </span>
-
                 </div>
-
               </a>
 
-
               <div class="ev-hours-section">
-
                 <div class="ev-hours">
-                  ${escapeHtml(
-                    subject.evHours
-                  ).replace(/\n/g, "<br>")}
+                  ${escapeHtml(subject.evHours).replace(
+                    /\n/g,
+                    "<br>"
+                  )}
                 </div>
-
               </div>
-
             </div>
-
           </div>
         `
         : ""
     }
 
+    ${
+      subject.registrarCounty && subject.registrarNumber
+        ? `
+          <div class="registrar-block">
+            Questions? Call your
+            ${escapeHtml(subject.registrarCounty)}
+            Registrar at
+            <a href="tel:${registrarPhoneForTel}">
+              ${escapeHtml(subject.registrarNumber)}
+            </a>
+          </div>
+        `
+        : ""
+    }
   `;
 }
-
 
 async function main() {
 
