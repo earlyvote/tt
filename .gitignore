@@ -1,6 +1,6 @@
 dist/
 /build/
-/individuals/
+/local/
 __pycache__/
 *.pyc
 .DS_Store
