@@ -1,10 +1,7 @@
 import csv
-import io
 import json
 import math
 import shutil
-import urllib.request
-import urllib.error
 from pathlib import Path
 
 
@@ -13,31 +10,9 @@ from pathlib import Path
 # ------------------------------------------------------------
 
 BLOCKS_CSV = Path("data/blocks.csv")
+EARLY_VOTING_CSV = Path("data/ev_locations_test.csv")
 
 OUTPUT_DIR = Path("build/data/blocks")
-
-
-# ------------------------------------------------------------
-# GOOGLE SHEET LOCATION
-# ------------------------------------------------------------
-
-# https://docs.google.com/spreadsheets/d/1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw/edit?gid=0#gid=0
-GOOGLE_SHEET_ID = "1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw"
-GOOGLE_SHEET_GID = "0"
-
-GOOGLE_SHEET_CSV_URL = (
-    f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}"
-    f"/export?format=csv&gid={GOOGLE_SHEET_GID}"
-)
-
-# On this sheet, row 1 is plain-text/human labels and row 2 has
-# the actual field names the rest of this script expects (the
-# same names that used to live in the header row of
-# ev_locations_test.csv). Data starts on row 3.
-#
-# Row 1 (index 0): plain text titles      <- skipped
-# Row 2 (index 1): real field names       <- used as header
-# Row 3+ (index 2+): data                 <- parsed as rows
 
 
 # ------------------------------------------------------------
@@ -107,88 +82,13 @@ def haversine_miles(lat1, lon1, lat2, lon2):
 
 
 # ------------------------------------------------------------
-# FETCH THE GOOGLE SHEET AS CSV
-# ------------------------------------------------------------
-
-def fetch_sheet_csv_text(url):
-    """
-    Download the Google Sheet's published CSV export and
-    return it as decoded text.
-
-    The sheet must be shared as "Anyone with the link can
-    view" (or published to the web) for the export URL to
-    work without authentication.
-    """
-
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "Mozilla/5.0"},
-    )
-
-    try:
-        with urllib.request.urlopen(request) as response:
-            raw_bytes = response.read()
-
-    except urllib.error.HTTPError as error:
-        raise RuntimeError(
-            "Could not download the Google Sheet CSV export "
-            f"(HTTP {error.code}). Make sure the sheet is "
-            "shared as \"Anyone with the link can view\"."
-        ) from error
-
-    except urllib.error.URLError as error:
-        raise RuntimeError(
-            f"Could not reach Google Sheets: {error.reason}"
-        ) from error
-
-    # utf-8-sig strips a BOM if Google includes one.
-    return raw_bytes.decode("utf-8-sig")
-
-
-def rows_from_sheet_csv(csv_text):
-    """
-    Parse the sheet's CSV text into dict rows, using row 2
-    (index 1) as the field-name header and treating row 1
-    (index 0) as a human-readable title row to skip.
-    """
-
-    all_rows = list(csv.reader(io.StringIO(csv_text)))
-
-    if len(all_rows) < 2:
-        raise ValueError(
-            "Early voting Google Sheet does not have enough "
-            "rows (expected a title row, then a field-name "
-            "row, then data)."
-        )
-
-    fieldnames = [name.strip() for name in all_rows[1]]
-    data_rows = all_rows[2:]
-
-    dict_rows = []
-
-    for row in data_rows:
-
-        # Skip fully blank rows.
-        if not any(clean(value) for value in row):
-            continue
-
-        # Pad short rows so zip() doesn't silently drop columns.
-        if len(row) < len(fieldnames):
-            row = row + [""] * (len(fieldnames) - len(row))
-
-        dict_rows.append(dict(zip(fieldnames, row)))
-
-    return fieldnames, dict_rows
-
-
-# ------------------------------------------------------------
-# LOAD EARLY VOTING LOCATIONS (FROM THE GOOGLE SHEET)
+# LOAD EARLY VOTING LOCATIONS
 # ------------------------------------------------------------
 
 def load_early_voting_locations():
     """
-    Read the early voting Google Sheet and organize locations
-    by state + county_fips.
+    Read the early voting CSV and organize locations by
+    state + county_fips.
     """
 
     required_columns = {
@@ -208,69 +108,76 @@ def load_early_voting_locations():
         "ev_county_fips"
     }
 
-    csv_text = fetch_sheet_csv_text(GOOGLE_SHEET_CSV_URL)
-
-    fieldnames, sheet_rows = rows_from_sheet_csv(csv_text)
-
-    missing = required_columns - set(fieldnames)
-
-    if missing:
-        raise ValueError(
-            "Early voting Google Sheet is missing columns "
-            "in row 2: " + ", ".join(sorted(missing))
-        )
-
     locations_by_state_fips = {}
     locations_by_state = []
 
-    for row in sheet_rows:
+    with EARLY_VOTING_CSV.open(
+        "r",
+        encoding="utf-8-sig",
+        newline=""
+    ) as file:
 
-        state = clean(row["ev_state"]).upper()
-        county_fips = clean(row["ev_county_fips"])
+        reader = csv.DictReader(file)
 
-        lat = to_coordinate(row["ev_lat"])
-        lon = to_coordinate(row["ev_long"])
+        if reader.fieldnames is None:
+            raise ValueError("Early voting CSV has no header row.")
 
-        # We cannot calculate distance without coordinates.
-        if not state or lat is None or lon is None:
-            continue
+        missing = required_columns - set(reader.fieldnames)
 
-        location = {
-            "state": state,
-            "county": clean(row["ev_county"]),
-            "county_fips": county_fips,
+        if missing:
+            raise ValueError(
+                "Early voting CSV is missing columns: "
+                + ", ".join(sorted(missing))
+            )
 
-            "main_ev_name": clean(row["ev_name"]),
-            "main_ev_street_address": clean(
-                row["ev_street_address"]
-            ),
-            "main_ev_city": clean(row["ev_city"]),
-            "main_ev_zip": clean(row["ev_zip"]),
+        for row in reader:
 
-            "main_ev_lat": lat,
-            "main_ev_long": lon,
+            state = clean(row["ev_state"]).upper()
+            county_fips = clean(row["ev_county_fips"])
 
-            "registrar_phone": clean(row["ev_registrar_phone"]),
+            lat = to_coordinate(row["ev_lat"])
+            lon = to_coordinate(row["ev_long"])
 
-            "main_ev_monday_friday": clean(
-                row["ev_monday_friday"]
-            ),
-            "main_ev_sat": clean(row["ev_sat"]),
-            "main_ev_sun": clean(row["ev_sun"]),
+            # We cannot calculate distance without coordinates.
+            if not state or lat is None or lon is None:
+                continue
 
-            "county_ev_lookup_link": clean(
-                row["ev_county_lookup_link"]
-            ),
-        }
+            location = {
+                "state": state,
+                "county": clean(row["ev_county"]),
+                "county_fips": county_fips,
 
-        key = (state, county_fips)
+                "main_ev_name": clean(row["ev_name"]),
+                "main_ev_street_address": clean(
+                    row["ev_street_address"]
+                ),
+                "main_ev_city": clean(row["ev_city"]),
+                "main_ev_zip": clean(row["ev_zip"]),
 
-        if key not in locations_by_state_fips:
-            locations_by_state_fips[key] = []
+                "main_ev_lat": lat,
+                "main_ev_long": lon,
 
-        locations_by_state_fips[key].append(location)
+                "registrar_phone": clean(row["ev_registrar_phone"]),
 
-        locations_by_state.append(location)
+                "main_ev_monday_friday": clean(
+                    row["ev_monday_friday"]
+                ),
+                "main_ev_sat": clean(row["ev_sat"]),
+                "main_ev_sun": clean(row["ev_sun"]),
+
+                "county_ev_lookup_link": clean(
+                    row["ev_county_lookup_link"]
+                ),
+            }
+
+            key = (state, county_fips)
+
+            if key not in locations_by_state_fips:
+                locations_by_state_fips[key] = []
+
+            locations_by_state_fips[key].append(location)
+
+            locations_by_state.append(location)
 
     return locations_by_state_fips, locations_by_state
 
@@ -362,7 +269,12 @@ def generate_block_files():
             f"Could not find {BLOCKS_CSV}"
         )
 
-    print("Loading early voting locations from Google Sheet...")
+    if not EARLY_VOTING_CSV.exists():
+        raise FileNotFoundError(
+            f"Could not find {EARLY_VOTING_CSV}"
+        )
+
+    print("Loading early voting locations...")
 
     (
         locations_by_state_fips,

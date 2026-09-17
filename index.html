@@ -908,7 +908,7 @@ function render(
                 </div>
               </div>
             </div>
-            <div style="text-align:center; padding: 10px 0px 10px 0px">
+            <div style="text-align:center; padding: 10px 0px 4px 0px">
             <a href="http://vavoter.net/evlist">More locations available here</a>
             </div>
             
@@ -921,9 +921,9 @@ function render(
       subject.registrarCounty && subject.registrarNumber
         ? `
           <div class="banner">
-            Questions about voting? <br>Call your
+            Questions about voting? <br>Call the
             ${escapeHtml(subject.registrarCounty)}
-            Registrar at
+            Registrar at <br>
             <a href="tel:${registrarPhoneForTel}">
               ${escapeHtml(subject.registrarNumber)}
             </a>
