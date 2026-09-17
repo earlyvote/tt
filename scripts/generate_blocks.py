@@ -1,4 +1,5 @@
 import csv
+import datetime
 import io
 import json
 import math
@@ -76,6 +77,70 @@ def to_coordinate(value):
         return None
 
     return number
+
+
+DATE_FORMATS = (
+    "%Y-%m-%d",
+    "%m/%d/%Y",
+    "%m/%d/%y",
+    "%B %d, %Y",
+    "%b %d, %Y",
+)
+
+
+def parse_date(value):
+    """
+    Parse a date string using a handful of common formats.
+
+    Returns a date object, or None if the value is empty or
+    couldn't be parsed with any of the known formats.
+    """
+
+    value = clean(value)
+
+    if not value:
+        return None
+
+    for date_format in DATE_FORMATS:
+        try:
+            return datetime.datetime.strptime(
+                value, date_format
+            ).date()
+        except ValueError:
+            continue
+
+    return None
+
+
+def location_is_open(delayed_opening_raw, today=None):
+    """
+    Determine whether an early voting location is currently
+    open, based on the raw ev_has_delayed_opening value.
+
+    - Empty value: no delayed opening, always open.
+    - Value present and parses to a date that has already
+      passed (<= today): the delay is over, open.
+    - Value present but the date hasn't passed yet, or the
+      value couldn't be parsed as a date: not open yet.
+    """
+
+    delayed_opening_raw = clean(delayed_opening_raw)
+
+    if not delayed_opening_raw:
+        return True
+
+    if today is None:
+        today = datetime.date.today()
+
+    opening_date = parse_date(delayed_opening_raw)
+
+    if opening_date is None:
+        # Has a value but we couldn't parse it as a date -
+        # play it safe and treat it as not yet open rather
+        # than silently including it.
+        return False
+
+    return opening_date <= today
 
 
 def haversine_miles(lat1, lon1, lat2, lon2):
@@ -235,6 +300,10 @@ def load_early_voting_locations():
         if not state or lat is None or lon is None:
             continue
 
+        delayed_opening_raw = clean(
+            row.get("ev_has_delayed_opening", "")
+        )
+
         location = {
             "state": state,
             "county": clean(row["ev_county"]),
@@ -261,6 +330,9 @@ def load_early_voting_locations():
             "county_ev_lookup_link": clean(
                 row["ev_county_lookup_link"]
             ),
+
+            "ev_has_delayed_opening": delayed_opening_raw,
+            "is_open": location_is_open(delayed_opening_raw),
         }
 
         key = (state, county_fips)
@@ -298,19 +370,24 @@ def find_closest_early_voting_location(
     state = clean(state).upper()
     county_fips = clean(county_fips)
 
-    candidates = locations_by_state_fips.get(
-        (state, county_fips),
-        []
-    )
+    candidates = [
+        location
+        for location in locations_by_state_fips.get(
+            (state, county_fips),
+            []
+        )
+        if location["is_open"]
+    ]
 
     statewide_fallback = False
 
-    # If there are no county FIPS locations, search the state.
+    # If there are no open county FIPS locations, search the state.
     if not candidates:
         candidates = [
             location
             for location in locations_by_state
             if location["state"] == state
+            and location["is_open"]
         ]
 
         statewide_fallback = True
