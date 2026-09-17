@@ -850,12 +850,26 @@ function render(
       </div>
 
       <div class="summary">
-        <b>${fmtPct(subject.tc)}</b>
-        of your block has voted.
+        ${
+          early
+            ? `
+              In 2024,
+              <b>${fmtPct(subject.tc)}</b>
+              of your block voted.
 
-        You are in
-        <b>${ordinal(subjectRank)} place</b>
-        out of ${total} nearby blocks.
+              You were in
+              <b>${ordinal(subjectRank)} place</b>
+              out of ${total} nearby blocks.
+            `
+            : `
+              <b>${fmtPct(subject.tc)}</b>
+              of your block has voted.
+
+              You are in
+              <b>${ordinal(subjectRank)} place</b>
+              out of ${total} nearby blocks.
+            `
+        }
       </div>
 
       <div class="chart-wrap">
@@ -908,7 +922,7 @@ function render(
                 </div>
               </div>
             </div>
-            <div style="text-align:center; padding: 10px 0px 4px 0px">
+            <div style="text-align:center;">
             <a href="http://vavoter.net/evlist">More locations available here</a>
             </div>
             
@@ -921,9 +935,9 @@ function render(
       subject.registrarCounty && subject.registrarNumber
         ? `
           <div class="banner">
-            Questions about voting? <br>Call the
+            Questions about voting? Call your
             ${escapeHtml(subject.registrarCounty)}
-            Registrar at <br>
+            Registrar at
             <a href="tel:${registrarPhoneForTel}">
               ${escapeHtml(subject.registrarNumber)}
             </a>
@@ -936,7 +950,7 @@ function render(
 }
 
 async function main() {
- 
+
   // ----------------------------------------------------------
   // GET BLOCK ID AND EARLY-TOGGLE FROM URL
   // ----------------------------------------------------------
