@@ -19,9 +19,25 @@ OUTPUT_DIR = Path("build/data/blocks")
 
 
 # ------------------------------------------------------------
-# GOOGLE SHEET LOCATION
+# GOOGLE SHEET LOCATIONS
 # ------------------------------------------------------------
 
+# Blocks sheet
+# https://docs.google.com/spreadsheets/d/1gtZwRUwE_q6OEZRw-vRevR4JfBXsdK3qXBjETzfJbTA/edit?gid=0#gid=0
+GOOGLE_BLOCKS_SHEET_ID = "1gtZwRUwE_q6OEZRw-vRevR4JfBXsdK3qXBjETzfJbTA"
+GOOGLE_BLOCKS_SHEET_GID = "0"
+
+GOOGLE_BLOCKS_SHEET_CSV_URL = (
+    f"https://docs.google.com/spreadsheets/d/{GOOGLE_BLOCKS_SHEET_ID}"
+    f"/export?format=csv&gid={GOOGLE_BLOCKS_SHEET_GID}"
+)
+
+# The blocks sheet uses a normal layout: row 1 is the real
+# header row, data starts on row 2. No title-row skipping
+# needed here (unlike the early voting sheet below).
+
+
+# Early voting sheet
 # https://docs.google.com/spreadsheets/d/1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw/edit?gid=0#gid=0
 GOOGLE_SHEET_ID = "1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw"
 GOOGLE_SHEET_GID = "0"
@@ -172,12 +188,12 @@ def haversine_miles(lat1, lon1, lat2, lon2):
 
 
 # ------------------------------------------------------------
-# FETCH THE GOOGLE SHEET AS CSV
+# FETCH A GOOGLE SHEET AS CSV TEXT
 # ------------------------------------------------------------
 
 def fetch_sheet_csv_text(url):
     """
-    Download the Google Sheet's published CSV export and
+    Download a Google Sheet's published CSV export and
     return it as decoded text.
 
     The sheet must be shared as "Anyone with the link can
@@ -212,9 +228,10 @@ def fetch_sheet_csv_text(url):
 
 def rows_from_sheet_csv(csv_text):
     """
-    Parse the sheet's CSV text into dict rows, using row 2
-    (index 1) as the field-name header and treating row 1
-    (index 0) as a human-readable title row to skip.
+    Parse the early voting sheet's CSV text into dict rows,
+    using row 2 (index 1) as the field-name header and
+    treating row 1 (index 0) as a human-readable title row
+    to skip.
     """
 
     all_rows = list(csv.reader(io.StringIO(csv_text)))
@@ -244,6 +261,37 @@ def rows_from_sheet_csv(csv_text):
         dict_rows.append(dict(zip(fieldnames, row)))
 
     return fieldnames, dict_rows
+
+
+# ------------------------------------------------------------
+# FETCH THE BLOCKS SHEET -> data/blocks.csv
+# ------------------------------------------------------------
+
+def fetch_blocks_csv():
+    """
+    Download the blocks Google Sheet and write it to
+    BLOCKS_CSV, so the rest of the script can keep reading
+    it as a normal local CSV file, exactly as before.
+
+    Unlike the early voting sheet, the blocks sheet has a
+    normal single header row, so the raw CSV text can be
+    written straight to disk with no reshaping.
+    """
+
+    print("Downloading blocks sheet from Google Sheets...")
+
+    csv_text = fetch_sheet_csv_text(GOOGLE_BLOCKS_SHEET_CSV_URL)
+
+    BLOCKS_CSV.parent.mkdir(parents=True, exist_ok=True)
+
+    with BLOCKS_CSV.open(
+        "w",
+        encoding="utf-8",
+        newline=""
+    ) as file:
+        file.write(csv_text)
+
+    print(f"Wrote blocks sheet to {BLOCKS_CSV}")
 
 
 # ------------------------------------------------------------
@@ -434,10 +482,9 @@ def generate_block_files():
     Read the block CSV and create one JSON file for every block.
     """
 
-    if not BLOCKS_CSV.exists():
-        raise FileNotFoundError(
-            f"Could not find {BLOCKS_CSV}"
-        )
+    # Refresh data/blocks.csv from the blocks Google Sheet before
+    # reading it, so BLOCKS_CSV always reflects the current sheet.
+    fetch_blocks_csv()
 
     print("Loading early voting locations from Google Sheet...")
 
