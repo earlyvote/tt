@@ -87,102 +87,77 @@
   }
 
   .ev-block {
-    padding: 20px 10px 20px;
+    padding: 10px 20px 10px;
   }
 
   .ev-block a {
-  color: #000;
-  font-weight: 700;
-  text-decoration: underline;
+    color: #000;
+    font-weight: 700;
+    text-decoration: underline;
   }
-  
 
-  .ev-details {
+  /* --- top row: name left, address right --- */
+  .ev-top {
     display: flex;
     align-items: flex-start;
-    gap: 0;
-  }
-
-  .ev-location {
-    flex: 2;
-    min-width: 0;
-    text-align: left;
-    color: var(--ink);
+    justify-content: space-between;
+    gap: 14px;
     text-decoration: none;
-    display: block;
+    color: var(--ink);
     border-radius: 8px;
     padding: 4px;
     margin: -4px;
     transition: background-color 0.15s ease;
   }
 
-  .ev-hours-section {
-    flex: 3;
-    min-width: 0;
-    padding: 0px 10px 0px 10px;
-    text-align: right;
+  .ev-top:hover {
+    background: var(--cream);
+  }
+
+  .ev-top:focus-visible {
+    outline: 3px solid var(--selected-block);
+    outline-offset: 3px;
   }
 
   .ev-name {
     font-weight: 700;
     font-size: 16px;
-    margin-bottom: 10px;
+    text-align: left;
+    flex: 1;
   }
 
   .ev-address {
     font-weight: 700;
     font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-
-  .ev-address-text {
+    text-align: right;
     text-decoration: underline;
+    flex: 1;
   }
 
-  .ev-pin-icon {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    fill: currentColor;
-  }
-
-  .ev-hours-label {
-    font-weight: 500;
+  /* --- bottom: single hours section, bold day labels --- */
+  .ev-hours-bottom {
+    margin-top: 14px;
     font-size: 14px;
-    color: var(--ink-soft);
-    margin-bottom: 0;
+    line-height: 1.6;
+    text-align: left;
   }
 
-  .ev-hours {
-    font-size: 14px;
-    line-height: 1.5;
+  .ev-hours-row {
+    margin-bottom: 2px;
   }
 
-  .ev-location:hover {
-    background: var(--cream);
-  }
-
-  .ev-location:focus-visible {
-    outline: 3px solid var(--selected-block);
-    outline-offset: 3px;
+  .ev-hours-title {
+    font-weight: 700;
   }
 
   @media (max-width: 380px) {
-    .ev-details {
+    .ev-top {
       flex-direction: column;
-      gap: 16px;
-    }
-
-    .ev-location,
-    .ev-hours-section {
-      width: 100%;
-      text-align: center;
+      gap: 6px;
     }
 
     .ev-address {
-      justify-content: center;
+      text-align: left;
     }
   }
 
@@ -319,6 +294,78 @@ const CONFIG = {
   earlyParam: "early",
   dataDirectory: "data/blocks",
   bannerText: "Early Voting has begun! Get your whole block to vote at your closest location:"
+};
+
+/*
+  ------------------------------------------------------------
+  DUMMY DATA
+  ------------------------------------------------------------
+
+  Used whenever the page is opened without a ?block= param
+  (or with ?block=demo), so the whole layout — chart, ranklist,
+  EV block, registrar banner — can be previewed without needing
+  a real generated JSON file. Shape matches exactly what
+  generate_blocks.py writes for a real block.
+  ------------------------------------------------------------
+*/
+
+const DUMMY_PAYLOAD = {
+  block_id: "demo-block",
+  block_plain: "Maple St & 5th Ave",
+  county: "Sample County",
+  registrar_phone: "(555) 555-0123",
+
+  pct_voted_current: 24.6,
+  pct_voted_3days: 19.2,
+  pct_voted_1week: 12.8,
+
+  pct_voted_2024: 68.4,
+  pct_voted_2022: 54.1,
+  pct_voted_2020: 71.9,
+
+  main_ev_name: "Office of Voter Registration & Elections",
+  main_ev_street_address: "132 North Royal Street, Suite 100",
+  main_ev_city: "Alexandria",
+  main_ev_zip: "22314",
+  main_ev_monday_friday: "September 18 thru October 30: 8am–5pm",
+  main_ev_sat: "October 24 & 31: 8am–5pm",
+  main_ev_sun: "October 18 & 25: 11am–4pm",
+
+  nearest_neighbor_1_id: "demo-neighbor-1",
+  nearest_neighbor_1_plain: "Oak St & 5th Ave",
+  nearest_neighbor_1_pct_voted_current: 31.5,
+  nearest_neighbor_1_pct_voted_3days: 24.9,
+  nearest_neighbor_1_pct_voted_1week: 16.3,
+  nearest_neighbor_1_pct_voted_2024: 72.1,
+  nearest_neighbor_1_pct_voted_2022: 58.7,
+  nearest_neighbor_1_pct_voted_2020: 75.2,
+
+  nearest_neighbor_2_id: "demo-neighbor-2",
+  nearest_neighbor_2_plain: "Maple St & 6th Ave",
+  nearest_neighbor_2_pct_voted_current: 18.2,
+  nearest_neighbor_2_pct_voted_3days: 14.1,
+  nearest_neighbor_2_pct_voted_1week: 9.6,
+  nearest_neighbor_2_pct_voted_2024: 61.3,
+  nearest_neighbor_2_pct_voted_2022: 47.8,
+  nearest_neighbor_2_pct_voted_2020: 65.0,
+
+  nearest_neighbor_3_id: "demo-neighbor-3",
+  nearest_neighbor_3_plain: "Pine St & 5th Ave",
+  nearest_neighbor_3_pct_voted_current: 27.9,
+  nearest_neighbor_3_pct_voted_3days: 21.4,
+  nearest_neighbor_3_pct_voted_1week: 13.9,
+  nearest_neighbor_3_pct_voted_2024: 69.8,
+  nearest_neighbor_3_pct_voted_2022: 55.6,
+  nearest_neighbor_3_pct_voted_2020: 70.4,
+
+  nearest_neighbor_4_id: "demo-neighbor-4",
+  nearest_neighbor_4_plain: "Maple St & 4th Ave",
+  nearest_neighbor_4_pct_voted_current: 15.7,
+  nearest_neighbor_4_pct_voted_3days: 11.8,
+  nearest_neighbor_4_pct_voted_1week: 7.4,
+  nearest_neighbor_4_pct_voted_2024: 58.9,
+  nearest_neighbor_4_pct_voted_2022: 44.2,
+  nearest_neighbor_4_pct_voted_2020: 62.6
 };
 
 function _cssVar(name, fallback) {
@@ -491,17 +538,17 @@ function convertPayload(payload, early = true) {
 
     evHours: [
       payload.main_ev_monday_friday
-        ? `Mon–Fri: ${payload.main_ev_monday_friday}`
+        ? { label: "Mon–Fri", value: payload.main_ev_monday_friday }
         : null,
 
       payload.main_ev_sat
-        ? `Sat: ${payload.main_ev_sat}`
+        ? { label: "Sat", value: payload.main_ev_sat }
         : null,
 
       payload.main_ev_sun
-        ? `Sun: ${payload.main_ev_sun}`
+        ? { label: "Sun", value: payload.main_ev_sun }
         : null
-    ].filter(Boolean).join("\n")
+    ].filter(Boolean)
   };
 
 
@@ -889,43 +936,39 @@ function render(
       subject.evTitle
         ? `
           <div class="ev-block">
-            <div class="ev-details">
-              <a
-                class="ev-location"
-                href="${mapUrl(
-                  subject.evTitle,
-                  subject.evAddress
-                )}"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open ${escapeHtml(
-                  subject.evTitle
-                )} in Google Maps"
-              >
-                <div class="ev-name">
-                  ${escapeHtml(subject.evTitle)}
-                </div>
-
-                <div class="ev-address">
-                  <span class="ev-address-text">
-                    ${escapeHtml(subject.evAddress)}
-                  </span>
-                </div>
-              </a>
-
-              <div class="ev-hours-section">
-                <div class="ev-hours">
-                  ${escapeHtml(subject.evHours).replace(
-                    /\n/g,
-                    "<br>"
-                  )}
-                </div>
+            <a
+              class="ev-top"
+              href="${mapUrl(
+                subject.evTitle,
+                subject.evAddress
+              )}"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open ${escapeHtml(
+                subject.evTitle
+              )} in Google Maps"
+            >
+              <div class="ev-name">
+                ${escapeHtml(subject.evTitle)}
               </div>
+
+              <div class="ev-address">
+                ${escapeHtml(subject.evAddress)}
+              </div>
+            </a>
+
+            <div class="ev-hours-bottom">
+              ${subject.evHours.map(row => `
+                <div class="ev-hours-row">
+                  <span class="ev-hours-title">${escapeHtml(row.label)}:</span>
+                  ${escapeHtml(row.value)}
+                </div>
+              `).join("")}
             </div>
-            <div style="text-align:center;">
-            <a href="http://vavoter.net/evlist">More locations available here</a>
+
+            <div style="text-align:center; margin-top: 10px;">
+              <a href="http://vavoter.net/evlist">More locations available here</a>
             </div>
-            
           </div>
         `
         : ""
@@ -967,82 +1010,84 @@ async function main() {
     params.get(CONFIG.earlyParam) !== "false";
 
 
-  if (!rawBlockId) {
-
-    showState(`
-      No block specified.<br><br>
-
-      Add
-      <code>?${CONFIG.urlParam}=YOUR_BLOCK_ID</code>
-      to the URL.
-    `);
-
-    return;
-  }
-
-
-  /*
-    encodeURIComponent is important here.
-
-    It allows IDs containing spaces, hyphens,
-    slashes, or other special characters to be
-    safely used as filenames/URLs.
-  */
-
-  const blockId =
-    rawBlockId.trim();
-
-  const jsonUrl =
-    `${CONFIG.dataDirectory}/${encodeURIComponent(
-      blockId
-    )}.json`;
-
-
-  // ----------------------------------------------------------
-  // LOAD ONLY THIS BLOCK'S JSON
-  // ----------------------------------------------------------
+  // --------------------------------------------------------
+  // DUMMY DATA MODE
+  //
+  // No ?block= param (or explicitly ?block=demo) skips the
+  // fetch entirely and renders the built-in DUMMY_PAYLOAD, so
+  // the whole layout can be previewed with no data files or
+  // server needed.
+  // --------------------------------------------------------
 
   let payload;
 
-  try {
+  if (!rawBlockId || rawBlockId.trim().toLowerCase() === "demo") {
 
-    const response =
-      await fetch(jsonUrl, {
-        cache: "no-cache"
-      });
+    payload = DUMMY_PAYLOAD;
+
+  } else {
+
+    /*
+      encodeURIComponent is important here.
+
+      It allows IDs containing spaces, hyphens,
+      slashes, or other special characters to be
+      safely used as filenames/URLs.
+    */
+
+    const blockId =
+      rawBlockId.trim();
+
+    const jsonUrl =
+      `${CONFIG.dataDirectory}/${encodeURIComponent(
+        blockId
+      )}.json`;
 
 
-    if (response.status === 404) {
+    // ----------------------------------------------------------
+    // LOAD ONLY THIS BLOCK'S JSON
+    // ----------------------------------------------------------
+
+    try {
+
+      const response =
+        await fetch(jsonUrl, {
+          cache: "no-cache"
+        });
+
+
+      if (response.status === 404) {
+
+        showState(`
+          No block found for ID
+          <code>${escapeHtml(blockId)}</code>.
+        `);
+
+        return;
+      }
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      }
+
+
+      payload =
+        await response.json();
+
+    } catch (error) {
 
       showState(`
-        No block found for ID
-        <code>${escapeHtml(blockId)}</code>.
+        Couldn't load block data.<br><br>
+        ${escapeHtml(error.message)}
       `);
 
       return;
     }
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-
-    }
-
-
-    payload =
-      await response.json();
-
-  } catch (error) {
-
-    showState(`
-      Couldn't load block data.<br><br>
-      ${escapeHtml(error.message)}
-    `);
-
-    return;
   }
 
 
