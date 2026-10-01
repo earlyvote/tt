@@ -50,6 +50,16 @@ def clean(value):
         return ""
     return str(value).strip()
 
+def normalize_fips(value):
+    """'25', '025', '51025', '25.0' -> '25' (county part, no leading zeros)."""
+    value = clean(value)
+    if not value:
+        return ""
+    try:
+        n = int(float(value))
+    except ValueError:
+        return value
+    return str(n % 1000)   # drop a state prefix if present
 
 def to_number(value):
     """Convert a value to a float, or return None if invalid."""
@@ -217,7 +227,7 @@ def load_early_voting_locations():
 
     for row in sheet_rows:
         state = clean(row["ev_state"]).upper()
-        fips = clean(row["ev_county_fips"])
+        fips = normalize_fips(row["ev_county_fips"])
         lat = to_number(row["ev_lat"])
         lon = to_number(row["ev_long"])
 
@@ -260,7 +270,7 @@ def load_early_voting_locations():
 def find_closest_ev_location(person_lat, person_lon, state, fips, locations_by_state_fips):
     """Finds the closest open EV location matching state and county FIPS."""
     state = clean(state).upper()
-    fips = clean(fips)
+    fips = normalize_fips(fips)
 
     candidates = locations_by_state_fips.get((state, fips), [])
 
@@ -316,6 +326,14 @@ def merge_people_and_early_voting():
             closest_loc = find_closest_ev_location(
                 p_lat, p_lon, p_state, p_fips, locations_by_state_fips
             )
+            if not closest_loc:
+                key = (clean(p_state).upper(), clean(p_fips))
+                print(
+                    "NO MATCH:", row.get("county"),
+                    "| key =", repr(key),
+                    "| key in sheet:", key in locations_by_state_fips,
+                    "| lat/lon =", repr(p_lat), repr(p_lon),
+                )
 
             if closest_loc:
                 for field in ev_target_fields:
