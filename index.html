@@ -49,7 +49,6 @@
   }
  
   .card {
-    position: relative; /* so the view menu can anchor to the card's corner */
     width: 100%;
     max-width: 440px;
     background: #ffffff;
@@ -58,7 +57,9 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   }
 
-  /* --- view menu (current vs. past elections) --- */
+  /* --- view menu (current vs. past elections) ---
+     Anchored to the top-right corner of .chart-wrap
+     (which is position: relative). */
   .viewmenu {
     position: absolute;
     top: 6px;
@@ -85,7 +86,7 @@
   .viewmenu summary:hover,
   .viewmenu[open] summary {
     opacity: 1;
-    background: var(--cream);
+    background: #fff;
   }
 
   .viewmenu summary:focus-visible {
@@ -234,10 +235,10 @@
   }
 
   .chart-wrap {
-    position: relative;
+    position: relative; /* anchor for the view menu */
     background: var(--cream);
     border-radius: 16px;
-    padding: 30px 10px 6px;   /* was 16px on top; extra room for the menu */
+    padding: 30px 10px 6px;   /* extra room on top for the menu */
     margin-bottom: 16px;
   }
 
@@ -966,14 +967,6 @@ function render(
       .replace(/[^\d+]/g, "");
 
   document.getElementById("card").innerHTML = `
-    <details class="viewmenu">
-      <summary aria-label="Change view">View ▾</summary>
-      <div class="viewmenu-panel" role="menu">
-        <button role="menuitemradio" aria-checked="${!early}" onclick="setView(false)">Current election</button>
-        <button role="menuitemradio" aria-checked="${early}" onclick="setView(true)">Past elections (2020–2024)</button>
-      </div>
-    </details>
-
     <div class="pad">
       <div class="pill">
         ${escapeHtml(subject.name)}
@@ -1003,6 +996,14 @@ function render(
       </div>
 
       <div class="chart-wrap">
+        <details class="viewmenu">
+          <summary aria-label="Change view">View ▾</summary>
+          <div class="viewmenu-panel" role="menu">
+            <button role="menuitemradio" aria-checked="${!early}" onclick="setView(false)">Current election</button>
+            <button role="menuitemradio" aria-checked="${early}" onclick="setView(true)">Past elections (2020–2024)</button>
+          </div>
+        </details>
+
         ${chartSVG}
       </div>
 
