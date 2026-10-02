@@ -801,6 +801,7 @@ function buildChartSVG(combined, colorMap, early = true) {
     / nBars;
 
   const OTHER_WIDTH_FACTOR = 0.5;
+  const MIN_BAR_HEIGHT = 3; // px in the 230px-tall viewBox; raise for a chunkier stub
 
   const baseline = yFor(minVal);
 
@@ -867,8 +868,8 @@ function buildChartSVG(combined, colorMap, early = true) {
 
       // Anchor the bar to the baseline, so a stub grows upward from the axis
       const y = baseline - barHeight;
-      const OTHER_WIDTH_FACTOR = 0.5;
-      const MIN_BAR_HEIGHT = 3; // px in the 230px-tall viewBox; raise for a chunkier stub
+
+      const color = colorMap[block.id];
 
       svg += `
         <rect
