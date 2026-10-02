@@ -49,12 +49,84 @@
   }
  
   .card {
+    position: relative; /* so the view menu can anchor to the card's corner */
     width: 100%;
     max-width: 440px;
     background: #ffffff;
     border-radius: 22px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  /* --- view menu (current vs. past elections) --- */
+  .viewmenu {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    z-index: 5;
+    font-size: 12px;
+  }
+
+  .viewmenu summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    color: var(--ink-soft);
+    opacity: 0.45; /* faint until hovered, so it stays "hidden" */
+    padding: 2px 8px;
+    border-radius: 999px;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+  }
+
+  .viewmenu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .viewmenu summary:hover,
+  .viewmenu[open] summary {
+    opacity: 1;
+    background: var(--cream);
+  }
+
+  .viewmenu summary:focus-visible {
+    outline: 3px solid var(--selected-block);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+
+  .viewmenu-panel {
+    position: absolute;
+    right: 0;
+    margin-top: 4px;
+    min-width: 200px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    padding: 4px;
+  }
+
+  .viewmenu-panel button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .viewmenu-panel button:hover {
+    background: var(--cream);
+  }
+
+  .viewmenu-panel button[aria-checked="true"] {
+    font-weight: 700;
+    color: var(--selected-block);
   }
 
   .pad {
@@ -891,6 +963,14 @@ function render(
       .replace(/[^\d+]/g, "");
 
   document.getElementById("card").innerHTML = `
+    <details class="viewmenu">
+      <summary aria-label="Change view">View ▾</summary>
+      <div class="viewmenu-panel" role="menu">
+        <button role="menuitemradio" aria-checked="${!early}" onclick="setView(false)">Current election</button>
+        <button role="menuitemradio" aria-checked="${early}" onclick="setView(true)">Past elections (2020–2024)</button>
+      </div>
+    </details>
+
     <div class="pad">
       <div class="pill">
         ${escapeHtml(subject.name)}
@@ -993,6 +1073,70 @@ function render(
   `;
 }
 
+
+/*
+  ------------------------------------------------------------
+  DRAW + VIEW TOGGLE
+  ------------------------------------------------------------
+
+  draw() turns an already-loaded payload into the rendered card.
+  It is separate from main() so the view menu can redraw with a
+  different `early` value without refetching the JSON.
+  ------------------------------------------------------------
+*/
+
+let currentPayload = null;
+
+function draw(payload, early) {
+  if (!payload || !payload.block_id) {
+    showState("The data file is incomplete or invalid.");
+    return;
+  }
+
+  const { subject, nearbyBlocks } = convertPayload(payload, early);
+
+  // Combine subject + neighbors, dropping duplicates by id
+  const uniqueBlocks = Array.from(
+    new Map(
+      [subject, ...nearbyBlocks]
+        .filter(block => block && block.id)
+        .map(block => [block.id, block])
+    ).values()
+  );
+
+  if (uniqueBlocks.length < 2) {
+    showState("No nearby-block data found.");
+    return;
+  }
+
+  // Rank by tc (the most recent column in the active view)
+  const toNum = v => Number.isFinite(Number(v)) ? Number(v) : -Infinity;
+  const ranked = [...uniqueBlocks].sort((a, b) => toNum(b.tc) - toNum(a.tc));
+
+  // Assign colors
+  const colorMap = {};
+  let paletteIndex = 0;
+  ranked.forEach(block => {
+    colorMap[block.id] = block.isSubject
+      ? COLOR_CONFIG.subject
+      : COLOR_CONFIG.ranks[paletteIndex++ % COLOR_CONFIG.ranks.length];
+  });
+
+  const subjectRank = ranked.findIndex(b => b.id === subject.id) + 1;
+
+  render(subject, ranked, colorMap, subjectRank, ranked.length, early);
+}
+
+function setView(early) {
+  // Keep the URL in sync so a shared/bookmarked link opens in the same view
+  const url = new URL(window.location.href);
+  url.searchParams.set(CONFIG.earlyParam, early ? "true" : "false");
+  history.replaceState(null, "", url);
+
+  draw(currentPayload, early);
+}
+
+
 async function main() {
 
   // ----------------------------------------------------------
@@ -1091,145 +1235,9 @@ async function main() {
     }
   }
 
-
-  // ----------------------------------------------------------
-  // VALIDATE THE JSON
-  // ----------------------------------------------------------
-
-  if (
-    !payload
-    || !payload.block_id
-  ) {
-
-    showState(`
-      The data file for
-      <code>${escapeHtml(blockId)}</code>
-      is incomplete or invalid.
-    `);
-
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // CONVERT FLAT JSON INTO DISPLAY OBJECTS
-  // ----------------------------------------------------------
-
-  const {
-    subject,
-    nearbyBlocks
-  } = convertPayload(payload, early);
-
-
-  // ----------------------------------------------------------
-  // COMBINE SUBJECT + FOUR NEIGHBORS
-  // ----------------------------------------------------------
-
-  const combined = [
-    subject,
-    ...nearbyBlocks
-  ];
-
-
-  // Remove duplicates in case a neighbor
-  // happens to equal the subject.
-
-  const uniqueBlocks =
-    Array.from(
-      new Map(
-        combined
-          .filter(
-            block => block && block.id
-          )
-          .map(
-            block => [block.id, block]
-          )
-      ).values()
-    );
-
-
-  if (uniqueBlocks.length < 2) {
-
-    showState(`
-      No nearby-block data found for
-      <code>${escapeHtml(blockId)}</code>.
-    `);
-
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // RANK BY CURRENT TURNOUT
-  // ----------------------------------------------------------
-
-  const ranked =
-    [...uniqueBlocks].sort(
-      (a, b) => {
-
-        const aTurnout =
-          Number.isFinite(
-            Number(a.tc)
-          )
-            ? Number(a.tc)
-            : -Infinity;
-
-        const bTurnout =
-          Number.isFinite(
-            Number(b.tc)
-          )
-            ? Number(b.tc)
-            : -Infinity;
-
-        return bTurnout - aTurnout;
-      }
-    );
-
-
-  // ----------------------------------------------------------
-  // ASSIGN COLORS
-  // ----------------------------------------------------------
-
-  const colorMap = {};
-
-  let paletteIndex = 0;
-
-  ranked.forEach(block => {
-
-    colorMap[block.id] =
-      block.isSubject
-        ? COLOR_CONFIG.subject
-        : COLOR_CONFIG.ranks[
-            paletteIndex++
-            % COLOR_CONFIG.ranks.length
-          ];
-
-  });
-
-
-  // ----------------------------------------------------------
-  // FIND SUBJECT'S RANK
-  // ----------------------------------------------------------
-
-  const subjectRank =
-    ranked.findIndex(
-      block =>
-        block.id === subject.id
-    ) + 1;
-
-
-  // ----------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------
-
-  render(
-    subject,
-    ranked,
-    colorMap,
-    subjectRank,
-    ranked.length,
-    early
-  );
+  // Remember the payload so the view menu can redraw without refetching
+  currentPayload = payload;
+  draw(payload, early);
 }
 
 
