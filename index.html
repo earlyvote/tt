@@ -1158,6 +1158,21 @@ function setView(early) {
   draw(currentPayload, early);
 }
 
+function defaultEarlyForState(state) {
+  // early = true  -> opens on past elections (2020 / 2022 / 2024)
+  // early = false -> opens on the current election
+  const defaults = {
+    VA: false,   // Virginia: current election
+    GA: true,   // Georgia: current election (change to true for past elections)
+  };
+
+  // Any state not listed above falls back to past elections
+  const fallback = true;
+
+  const key = String(state ?? "").trim().toUpperCase();
+  return defaults[key] ?? fallback;
+}
+
 
 async function main() {
 
@@ -1173,8 +1188,10 @@ async function main() {
   const rawBlockId =
     params.get(CONFIG.urlParam);
 
-  const early =
-    params.get(CONFIG.earlyParam) !== "false";
+  // "true", "false", or null (not specified). The actual default
+  // is decided after the payload loads, because it depends on state.
+  const earlyParamValue =
+    params.get(CONFIG.earlyParam);
 
 
   // --------------------------------------------------------
@@ -1259,6 +1276,19 @@ async function main() {
 
   // Remember the payload so the view menu can redraw without refetching
   currentPayload = payload;
+
+  // An explicit ?early=true/false in the URL wins; otherwise
+  // default by state (VA = current election, others = past elections)
+  let early;
+
+  if (earlyParamValue === "true") {
+    early = true;
+  } else if (earlyParamValue === "false") {
+    early = false;
+  } else {
+    early = defaultEarlyForState(payload.state);
+  }
+
   draw(payload, early);
 }
 
