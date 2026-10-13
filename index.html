@@ -367,7 +367,15 @@ const CONFIG = {
   urlParam: "block",
   earlyParam: "early",
   dataDirectory: "data/blocks",
-  bannerText: "Early Voting in VA has begun! Get your whole block to vote at your closest open location:"
+  bannerTexts: {
+    VA: "Early Voting in VA has begun! Get your whole block to vote at your closest open location:",
+    GA: "Early Voting in GA has begun! Get your whole block to vote at your closest open location:"
+  },
+  locationsLinks: {
+    VA: "https://vavoter.net/evlist",
+    GA: "https://gavoter.net/early"
+  },
+  defaultState: "VA"
 };
 
 /*
@@ -386,6 +394,7 @@ const CONFIG = {
 const DUMMY_PAYLOAD = {
   block_id: "demo-block",
   block_plain: "Your Block",
+  state: "VA",
   county: "Sample County",
   registrar_phone: "(555) 555-0123",
 
@@ -591,6 +600,7 @@ function convertPayload(payload, early = true) {
   const subject = {
     id: payload.block_id,
     name: payload.block_plain,
+    state: String(payload.state || CONFIG.defaultState).toUpperCase(),
     registrarCounty: payload.county,
     registrarNumber: payload.registrar_phone,
 
@@ -603,6 +613,11 @@ function convertPayload(payload, early = true) {
 
     // Early voting information
     evTitle: payload.main_ev_name,
+
+    // "More locations" link, chosen by state (VA if unknown)
+    evLookupLink:
+      CONFIG.locationsLinks[String(payload.state || "").toUpperCase()]
+      ?? CONFIG.locationsLinks[CONFIG.defaultState],
 
     evAddress: [
       payload.main_ev_street_address,
@@ -1013,7 +1028,10 @@ function render(
     </div>
 
     <div class="banner">
-      ${escapeHtml(CONFIG.bannerText)}
+      ${escapeHtml(
+        CONFIG.bannerTexts[subject.state]
+        ?? CONFIG.bannerTexts[CONFIG.defaultState]
+      )}
     </div>
 
     ${
@@ -1051,7 +1069,7 @@ function render(
             </div>
 
             <div style="text-align:center; margin-top: 15px; margin-bottom: 10px;">
-              <a href="http://vavoter.net/evlist">More locations available here</a>
+              <a href="${escapeHtml(subject.evLookupLink)}" target="_blank" rel="noopener noreferrer">More locations available here</a>
             </div>
           </div>
         `

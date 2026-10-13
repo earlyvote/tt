@@ -40,12 +40,21 @@ GOOGLE_BLOCKS_SHEET_CSV_URL = (
 # Early voting sheet
 # https://docs.google.com/spreadsheets/d/1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw/edit?gid=0#gid=0
 GOOGLE_SHEET_ID = "1xAi3sD_DQwjJt28Ed76uzLnIDACHih-jCCHu2oKwtHw"
-GOOGLE_SHEET_GID = "0"
 
-GOOGLE_SHEET_CSV_URL = (
-    f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}"
-    f"/export?format=csv&gid={GOOGLE_SHEET_GID}"
-)
+# One tab per state in the early voting spreadsheet.
+# The tab a location comes from decides its state.
+EV_SHEET_GIDS = {
+    "VA": "0",
+    "GA": "1088480979",
+}
+
+
+def ev_sheet_url(gid):
+    return (
+        f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}"
+        f"/export?format=csv&gid={gid}"
+    )
+
 
 # On this sheet, row 1 is plain-text/human labels and row 2 has
 # the actual field names the rest of this script expects (the
@@ -321,24 +330,36 @@ def load_early_voting_locations():
         "ev_county_fips"
     }
 
-    csv_text = fetch_sheet_csv_text(GOOGLE_SHEET_CSV_URL)
+    # Download every state's tab and tag each row with the state
+    # of the tab it came from.
+    tagged_rows = []
 
-    fieldnames, sheet_rows = rows_from_sheet_csv(csv_text)
+    for tab_state, gid in EV_SHEET_GIDS.items():
 
-    missing = required_columns - set(fieldnames)
+        csv_text = fetch_sheet_csv_text(ev_sheet_url(gid))
 
-    if missing:
-        raise ValueError(
-            "Early voting Google Sheet is missing columns "
-            "in row 2: " + ", ".join(sorted(missing))
-        )
+        fieldnames, sheet_rows = rows_from_sheet_csv(csv_text)
+
+        missing = required_columns - set(fieldnames)
+
+        if missing:
+            raise ValueError(
+                f"Early voting Google Sheet ({tab_state} tab) is "
+                "missing columns in row 2: "
+                + ", ".join(sorted(missing))
+            )
+
+        for sheet_row in sheet_rows:
+            tagged_rows.append((tab_state, sheet_row))
 
     locations_by_state_fips = {}
     locations_by_state = []
 
-    for row in sheet_rows:
+    for tab_state, row in tagged_rows:
 
-        state = clean(row["ev_state"]).upper()
+        # The tab decides the state, so a typo in a tab's
+        # ev_state column can't put a location in the wrong bucket.
+        state = tab_state
         county_fips = clean(row["ev_county_fips"])
 
         lat = to_coordinate(row["ev_lat"])
@@ -572,6 +593,15 @@ def generate_block_files():
             for key, value in row.items():
                 output[key] = clean(value)
 
+            # State comes from the block ID prefix (VA..., GA...).
+            # If the prefix isn't a known state, use the CSV column.
+            block_state = block_id[:2].upper()
+
+            if block_state not in EV_SHEET_GIDS:
+                block_state = clean(row["state"]).upper()
+
+            output["state"] = block_state
+
             # Convert coordinates to actual numbers.
             if block_lat is not None:
                 output["block_latitude"] = block_lat
@@ -590,7 +620,7 @@ def generate_block_files():
                 early_voting = find_closest_early_voting_location(
                     block_lat,
                     block_lon,
-                    row["state"],
+                    block_state,
                     row["county_fips"],
                     locations_by_state_fips,
                     locations_by_state,
