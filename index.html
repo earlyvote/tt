@@ -368,12 +368,12 @@ const CONFIG = {
   earlyParam: "early",
   dataDirectory: "data/blocks",
   bannerTexts: {
-    VA: "Early Voting in VA has begun! Get your whole block to vote at your closest open location:",
-    GA: "Early Voting in GA has begun! Get your whole block to vote at your closest open location:"
+    VA: "Election Day is Tuesday, November 3! Get your whole block out to vote at your polling location:",
+    GA: "Election Day is Tuesday, November 3! Get your whole block out to vote at your polling location:"
   },
-  locationsLinks: {
-    VA: "https://vavoter.net/evlist",
-    GA: "https://gavoter.net/early"
+  pollingLinks: {
+    VA: "https://vote.elections.virginia.gov/VoterInformation",
+    GA: "https://mvp.sos.ga.gov/"
   },
   defaultState: "VA"
 };
@@ -385,8 +385,8 @@ const CONFIG = {
 
   Used whenever the page is opened without a ?block= param
   (or with ?block=demo), so the whole layout — chart, ranklist,
-  EV block, registrar banner — can be previewed without needing
-  a real generated JSON file. Shape matches exactly what
+  polling link, registrar banner — can be previewed without
+  needing a real generated JSON file. Shape matches exactly what
   generate_blocks.py writes for a real block.
   ------------------------------------------------------------
 */
@@ -611,33 +611,11 @@ function convertPayload(payload, early = true) {
 
     isSubject: true,
 
-    // Early voting information
-    evTitle: payload.main_ev_name,
-
-    // "More locations" link, chosen by state (VA if unknown)
-    evLookupLink:
-      CONFIG.locationsLinks[String(payload.state || "").toUpperCase()]
-      ?? CONFIG.locationsLinks[CONFIG.defaultState],
-
-    evAddress: [
-      payload.main_ev_street_address,
-      payload.main_ev_city,
-      payload.main_ev_zip
-    ].filter(Boolean).join(", "),
-
-    evHours: [
-      payload.main_ev_monday_friday
-        ? { label: "Mon–Fri", value: payload.main_ev_monday_friday }
-        : null,
-
-      payload.main_ev_sat
-        ? { label: "Sat", value: payload.main_ev_sat }
-        : null,
-
-      payload.main_ev_sun
-        ? { label: "Sun", value: payload.main_ev_sun }
-        : null
-    ].filter(Boolean)
+    // Election Day: link to the state's polling place lookup
+    // (VA if the state is unknown)
+    pollingLink:
+      CONFIG.pollingLinks[String(payload.state || "").toUpperCase()]
+      ?? CONFIG.pollingLinks[CONFIG.defaultState]
   };
 
 
@@ -1035,42 +1013,14 @@ function render(
     </div>
 
     ${
-      subject.evTitle
+      subject.pollingLink
         ? `
-          <div class="ev-block">
-            <a
-              class="ev-top"
-              href="${mapUrl(
-                subject.evTitle,
-                subject.evAddress
-              )}"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open ${escapeHtml(
-                subject.evTitle
-              )} in Google Maps"
-            >
-              <div class="ev-name">
-                ${escapeHtml(subject.evTitle)}
-              </div>
-
-              <div class="ev-address">
-                ${escapeHtml(subject.evAddress)}
-              </div>
+          <div class="ev-block" style="text-align:center;">
+            <a href="${escapeHtml(subject.pollingLink)}"
+               target="_blank"
+               rel="noopener noreferrer">
+              Find your polling location
             </a>
-
-            <div class="ev-hours-bottom">
-              ${subject.evHours.map(row => `
-                <div class="ev-hours-row">
-                  <span class="ev-hours-title">${escapeHtml(row.label)}:</span>
-                  ${escapeHtml(row.value)}
-                </div>
-              `).join("")}
-            </div>
-
-            <div style="text-align:center; margin-top: 15px; margin-bottom: 10px;">
-              <a href="${escapeHtml(subject.evLookupLink)}" target="_blank" rel="noopener noreferrer">More locations available here</a>
-            </div>
           </div>
         `
         : ""
