@@ -32,7 +32,9 @@ jobs:
         run: python scripts/generate_blocks.py
 
       - name: Copy static site files into build
-        run: cp index.html build/index.html
+        run: |
+          cp index.html build/index.html
+          cp index-old.html build/index-old.html
 
       - name: Upload blocks.csv as an artifact
         uses: actions/upload-artifact@v4
